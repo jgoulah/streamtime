@@ -84,6 +84,3 @@ npm start
 
 See `IMPLEMENTATION_PLAN.md` for detailed development stages and technical decisions.
 
-## License
-
-MIT License - Personal use only
