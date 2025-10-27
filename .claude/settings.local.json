@@ -5,7 +5,8 @@
       "Bash(curl:*)",
       "Bash(python3:*)",
       "Bash(docker-compose logs:*)",
-      "Bash(docker-compose down:*)"
+      "Bash(docker-compose down:*)",
+      "Bash(go test:*)"
     ],
     "deny": [],
     "ask": []

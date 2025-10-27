@@ -78,7 +78,7 @@ func (db *DB) GetServiceStats(startDate, endDate time.Time) ([]ServiceStats, err
 			s.logo_url,
 			COALESCE(SUM(wh.duration_minutes), 0) as total_minutes,
 			COUNT(wh.id) as total_shows,
-			MAX(wh.watched_at) as last_watched
+			DATETIME(MAX(wh.watched_at)) as last_watched
 		FROM services s
 		LEFT JOIN watch_history wh ON s.id = wh.service_id
 			AND wh.watched_at >= ?
@@ -95,7 +95,7 @@ func (db *DB) GetServiceStats(startDate, endDate time.Time) ([]ServiceStats, err
 	var stats []ServiceStats
 	for rows.Next() {
 		var stat ServiceStats
-		var lastWatched sql.NullTime
+		var lastWatchedStr sql.NullString
 		err := rows.Scan(
 			&stat.ServiceID,
 			&stat.ServiceName,
@@ -103,13 +103,18 @@ func (db *DB) GetServiceStats(startDate, endDate time.Time) ([]ServiceStats, err
 			&stat.LogoURL,
 			&stat.TotalMinutes,
 			&stat.TotalShows,
-			&lastWatched,
+			&lastWatchedStr,
 		)
 		if err != nil {
 			return nil, err
 		}
-		if lastWatched.Valid {
-			stat.LastWatched = &lastWatched.Time
+		if lastWatchedStr.Valid && lastWatchedStr.String != "" {
+			// Parse the datetime string from SQLite
+			// SQLite DATETIME() format: "YYYY-MM-DD HH:MM:SS"
+			t, err := time.Parse("2006-01-02 15:04:05", lastWatchedStr.String)
+			if err == nil {
+				stat.LastWatched = &t
+			}
 		}
 		stats = append(stats, stat)
 	}

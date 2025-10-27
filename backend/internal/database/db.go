@@ -22,8 +22,15 @@ func New(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("failed to create database directory: %w", err)
 	}
 
-	// Open database connection
-	sqlDB, err := sql.Open("sqlite3", dbPath)
+	// Open database connection with time parsing parameters
+	// This allows SQLite to parse datetime strings into time.Time
+	connStr := dbPath
+	if dbPath == ":memory:" {
+		connStr = "file::memory:?cache=shared&_loc=auto"
+	} else {
+		connStr = dbPath + "?_loc=auto"
+	}
+	sqlDB, err := sql.Open("sqlite3", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
