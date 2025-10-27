@@ -156,6 +156,28 @@ func (db *DB) GetWatchHistory(serviceID int64, startDate, endDate time.Time, lim
 	return history, rows.Err()
 }
 
+// WatchHistoryExists checks if a watch history entry already exists
+func (db *DB) WatchHistoryExists(serviceID int64, title, episodeInfo string, watchedAt time.Time) (bool, error) {
+	var count int
+	// Normalize the watched_at time to just the date for comparison
+	dateOnly := watchedAt.Format("2006-01-02")
+
+	err := db.QueryRow(`
+		SELECT COUNT(*)
+		FROM watch_history
+		WHERE service_id = ?
+		  AND title = ?
+		  AND episode_info = ?
+		  AND DATE(watched_at) = ?
+	`, serviceID, title, episodeInfo, dateOnly).Scan(&count)
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
 // InsertWatchHistory inserts or updates a watch history entry
 func (db *DB) InsertWatchHistory(wh *WatchHistory) error {
 	result, err := db.Exec(`

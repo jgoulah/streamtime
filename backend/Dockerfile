@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:alpine AS builder
 
 # Install build dependencies for CGO (required for SQLite)
 RUN apk add --no-cache gcc musl-dev sqlite-dev
@@ -19,7 +19,20 @@ RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/serv
 # Runtime stage
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates sqlite
+# Install runtime dependencies including Chromium for web scraping
+RUN apk --no-cache add \
+    ca-certificates \
+    sqlite \
+    chromium \
+    chromium-chromedriver \
+    nss \
+    freetype \
+    harfbuzz \
+    ttf-freefont
+
+# Tell Puppeteer/chromedp to skip downloading Chrome (we're using system Chromium)
+ENV CHROME_BIN=/usr/bin/chromium-browser \
+    CHROME_PATH=/usr/lib/chromium/
 
 WORKDIR /root/
 

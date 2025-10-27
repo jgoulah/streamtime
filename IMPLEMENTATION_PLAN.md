@@ -66,7 +66,7 @@ Single-user web application to track screen time across streaming services using
 - Database storage tests
 - Handle missing data fields
 
-**Status**: Not Started
+**Status**: Complete
 
 ---
 
@@ -107,7 +107,7 @@ Single-user web application to track screen time across streaming services using
 - API integration tests
 - Responsive layout verification
 
-**Status**: Not Started
+**Status**: Complete
 
 ---
 

@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/jgoulah/streamtime/internal/config"
 	"github.com/jgoulah/streamtime/internal/database"
+	"github.com/jgoulah/streamtime/internal/scraper"
 )
 
 // setupTestAPI creates a test database and API handler
@@ -17,7 +19,20 @@ func setupTestAPI(t *testing.T) (*Handler, *database.DB) {
 	if err != nil {
 		t.Fatalf("Failed to create test database: %v", err)
 	}
-	handler := NewHandler(db)
+
+	cfg := &config.Config{
+		Services: map[string]config.ServiceConfig{
+			"netflix": {
+				Enabled: true,
+			},
+		},
+		TMDB: config.TMDBConfig{
+			APIKey: "test_api_key",
+		},
+	}
+
+	scraperMgr := scraper.NewManager(db, cfg)
+	handler := NewHandler(db, scraperMgr, cfg)
 	return handler, db
 }
 
@@ -269,8 +284,8 @@ func TestTriggerScrape(t *testing.T) {
 		t.Errorf("Expected service 'netflix', got '%v'", response["service"])
 	}
 
-	if response["status"] != "pending" {
-		t.Errorf("Expected status 'pending', got '%v'", response["status"])
+	if response["status"] != "running" {
+		t.Errorf("Expected status 'running', got '%v'", response["status"])
 	}
 }
 

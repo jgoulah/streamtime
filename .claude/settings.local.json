@@ -6,7 +6,8 @@
       "Bash(python3:*)",
       "Bash(docker-compose logs:*)",
       "Bash(docker-compose down:*)",
-      "Bash(go test:*)"
+      "Bash(go test:*)",
+      "Bash(go get:*)"
     ],
     "deny": [],
     "ask": []

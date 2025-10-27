@@ -11,6 +11,7 @@ import (
 	"github.com/jgoulah/streamtime/internal/api"
 	"github.com/jgoulah/streamtime/internal/config"
 	"github.com/jgoulah/streamtime/internal/database"
+	"github.com/jgoulah/streamtime/internal/scraper"
 )
 
 func main() {
@@ -36,8 +37,17 @@ func main() {
 
 	log.Printf("Database initialized at %s", cfg.Database.Path)
 
+	// Initialize scraper manager
+	scraperMgr := scraper.NewManager(db, cfg)
+
+	// Register scrapers
+	netflixScraper := scraper.NewNetflixScraper(cfg, db)
+	scraperMgr.Register(netflixScraper)
+
+	log.Println("Scraper manager initialized with Netflix scraper")
+
 	// Create API handler
-	handler := api.NewHandler(db)
+	handler := api.NewHandler(db, scraperMgr, cfg)
 	router := api.NewRouter(handler)
 
 	// Start HTTP server

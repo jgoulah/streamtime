@@ -1,23 +1,35 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/jgoulah/streamtime/internal/config"
 	"github.com/jgoulah/streamtime/internal/database"
+	"github.com/jgoulah/streamtime/internal/importer"
+	"github.com/jgoulah/streamtime/internal/scraper"
 )
 
 // Handler holds dependencies for API handlers
 type Handler struct {
-	db *database.DB
+	db             *database.DB
+	scraperManager *scraper.Manager
+	config         *config.Config
 }
 
 // NewHandler creates a new API handler
-func NewHandler(db *database.DB) *Handler {
-	return &Handler{db: db}
+func NewHandler(db *database.DB, scraperMgr *scraper.Manager, cfg *config.Config) *Handler {
+	return &Handler{
+		db:             db,
+		scraperManager: scraperMgr,
+		config:         cfg,
+	}
 }
 
 // healthCheck returns the health status of the API
@@ -28,14 +40,46 @@ func (h *Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// getServices returns all services with their current month statistics
+// getServices returns all services with their statistics
 func (h *Handler) getServices(w http.ResponseWriter, r *http.Request) {
-	// Get current month range
-	now := time.Now()
-	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
-	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+	// Parse query parameters for date range
+	query := r.URL.Query()
 
-	stats, err := h.db.GetServiceStats(startOfMonth, endOfMonth)
+	var startDate, endDate time.Time
+
+	// Check if specific year or month is requested
+	yearStr := query.Get("year")
+	monthStr := query.Get("month")
+
+	if yearStr != "" {
+		// Specific year requested
+		year, err := strconv.Atoi(yearStr)
+		if err != nil || year < 2000 || year > 2100 {
+			respondError(w, http.StatusBadRequest, "Invalid year parameter", fmt.Errorf("year must be between 2000 and 2100"))
+			return
+		}
+
+		if monthStr != "" {
+			// Specific month within year
+			month, err := strconv.Atoi(monthStr)
+			if err != nil || month < 1 || month > 12 {
+				respondError(w, http.StatusBadRequest, "Invalid month parameter", fmt.Errorf("month must be between 1 and 12"))
+				return
+			}
+			startDate = time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+			endDate = startDate.AddDate(0, 1, 0)
+		} else {
+			// Entire year
+			startDate = time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+			endDate = time.Date(year+1, 1, 1, 0, 0, 0, 0, time.UTC)
+		}
+	} else {
+		// All-time stats (default)
+		startDate = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+		endDate = time.Now().AddDate(1, 0, 0) // One year from now
+	}
+
+	stats, err := h.db.GetServiceStats(startDate, endDate)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to fetch services", err)
 		return
@@ -93,13 +137,53 @@ func (h *Handler) triggerScrape(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	serviceName := vars["service"]
 
-	// TODO: Implement scraper triggering
-	// For now, return a placeholder response
+	// Capitalize service name to match database format (e.g., "netflix" -> "Netflix")
+	serviceNameCapitalized := capitalizeServiceName(serviceName)
+
+	// Run scraper in background (with timeout)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+
+		result, err := h.scraperManager.Run(ctx, serviceNameCapitalized)
+		if err != nil {
+			// Error is already logged in scraper manager
+			return
+		}
+
+		// Log result
+		if result.Success {
+			// Successfully scraped
+			return
+		}
+	}()
+
+	// Return immediate response
 	respondJSON(w, http.StatusAccepted, map[string]interface{}{
 		"message": "Scraper triggered",
 		"service": serviceName,
-		"status":  "pending",
+		"status":  "running",
 	})
+}
+
+// capitalizeServiceName converts service names to database format
+func capitalizeServiceName(name string) string {
+	switch name {
+	case "netflix":
+		return "Netflix"
+	case "youtube_tv":
+		return "YouTube TV"
+	case "amazon_video":
+		return "Amazon Video"
+	case "hbo_max":
+		return "HBO Max"
+	case "apple_tv":
+		return "Apple TV+"
+	case "peacock":
+		return "Peacock"
+	default:
+		return name
+	}
 }
 
 // getScraperStatus returns the status of recent scraper runs
@@ -149,4 +233,52 @@ func parseIntParam(param string, defaultVal int) int {
 		return defaultVal
 	}
 	return val
+}
+
+// uploadNetflixCSV handles Netflix viewing activity CSV upload
+func (h *Handler) uploadNetflixCSV(w http.ResponseWriter, r *http.Request) {
+	// Parse multipart form (10MB max)
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		respondError(w, http.StatusBadRequest, "Failed to parse form", err)
+		return
+	}
+
+	// Get the file from form
+	file, header, err := r.FormFile("csv")
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "No file provided", err)
+		return
+	}
+	defer file.Close()
+
+	log.Printf("Received CSV file: %s, size: %d bytes", header.Filename, header.Size)
+
+	// Check TMDB API key is configured
+	if h.config.TMDB.APIKey == "" {
+		respondError(w, http.StatusInternalServerError,
+			"TMDB API key not configured", fmt.Errorf("tmdb.api_key is required in config"))
+		return
+	}
+
+	// Create importer
+	netflixImporter := importer.NewNetflixImporter(h.db, h.config.TMDB.APIKey)
+
+	// Import CSV
+	result, err := netflixImporter.ImportCSV(file)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to import CSV", err)
+		return
+	}
+
+	// Return result
+	response := map[string]interface{}{
+		"success":       true,
+		"total_rows":    result.TotalRows,
+		"imported":      result.Imported,
+		"skipped":       result.Skipped,
+		"errors":        result.Errors,
+		"error_details": result.ErrorMessages,
+	}
+
+	respondJSON(w, http.StatusOK, response)
 }

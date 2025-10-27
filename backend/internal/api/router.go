@@ -19,6 +19,7 @@ func NewRouter(handler *Handler) http.Handler {
 	api.HandleFunc("/services/{id:[0-9]+}/history", handler.getServiceHistory).Methods("GET")
 	api.HandleFunc("/scrape/{service}", handler.triggerScrape).Methods("POST")
 	api.HandleFunc("/scraper/status", handler.getScraperStatus).Methods("GET")
+	api.HandleFunc("/upload/netflix", handler.uploadNetflixCSV).Methods("POST")
 
 	// Configure CORS
 	c := cors.New(cors.Options{

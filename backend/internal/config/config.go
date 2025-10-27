@@ -13,6 +13,7 @@ type Config struct {
 	Server   ServerConfig           `yaml:"server"`
 	Services map[string]ServiceConfig `yaml:"services"`
 	Scraper  ScraperConfig          `yaml:"scraper"`
+	TMDB     TMDBConfig             `yaml:"tmdb"`
 }
 
 // DatabaseConfig holds database configuration
@@ -26,12 +27,19 @@ type ServerConfig struct {
 	Host string `yaml:"host"`
 }
 
+// Cookie represents a browser cookie
+type Cookie struct {
+	Name  string `yaml:"name"`
+	Value string `yaml:"value"`
+}
+
 // ServiceConfig holds configuration for a streaming service
 type ServiceConfig struct {
-	Enabled  bool   `yaml:"enabled"`
-	Email    string `yaml:"email"`
-	Password string `yaml:"password"`
-	UseOAuth bool   `yaml:"use_oauth"`
+	Enabled bool     `yaml:"enabled"`
+	Cookies []Cookie `yaml:"cookies"`
+	Email   string   `yaml:"email"` // For non-Netflix services
+	Password string  `yaml:"password"` // For non-Netflix services
+	UseOAuth bool    `yaml:"use_oauth"` // For non-Netflix services
 }
 
 // ScraperConfig holds scraper configuration
@@ -40,6 +48,11 @@ type ScraperConfig struct {
 	Headless  bool   `yaml:"headless"`
 	Timeout   int    `yaml:"timeout"`    // seconds
 	UserAgent string `yaml:"user_agent"`
+}
+
+// TMDBConfig holds The Movie Database API configuration
+type TMDBConfig struct {
+	APIKey string `yaml:"api_key"`
 }
 
 // Load reads and parses the configuration file
