@@ -1,0 +1,33 @@
+database:
+  path: ./data/streamtime.db
+
+server:
+  port: 8080
+  host: 0.0.0.0
+
+services:
+  netflix:
+    enabled: true
+    email: your-email@example.com
+    password: your-password
+    use_oauth: false
+
+  youtube_tv:
+    enabled: true
+    email: your-email@example.com
+    password: your-password
+    use_oauth: true
+
+  amazon_video:
+    enabled: true
+    email: your-email@example.com
+    password: your-password
+    use_oauth: false
+
+scraper:
+  # Cron format: minute hour day month weekday
+  # "0 3 * * *" = Daily at 3:00 AM
+  schedule: "0 3 * * *"
+  headless: true
+  timeout: 300  # seconds
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"

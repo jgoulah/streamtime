@@ -1,0 +1,46 @@
+# Config files with credentials
+config.yaml
+
+# Database
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Backend
+backend/streamtime
+backend/tmp/
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env.local
+frontend/.env
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker
+docker-compose.override.yml

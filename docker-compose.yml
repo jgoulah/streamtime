@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: streamtime-backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/root/data
+      - ./config.yaml:/root/config.yaml:ro
+    environment:
+      - CONFIG_PATH=/root/config.yaml
+    networks:
+      - streamtime-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: streamtime-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - streamtime-network
+    restart: unless-stopped
+
+networks:
+  streamtime-network:
+    driver: bridge
+
+volumes:
+  data:
