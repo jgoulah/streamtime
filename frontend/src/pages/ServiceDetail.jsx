@@ -84,37 +84,41 @@ const ServiceDetail = () => {
     <div className="min-h-screen bg-slate-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <Link to="/" className="text-blue-400 hover:text-blue-300 mb-2 inline-block">
-              ← Back to Dashboard
-            </Link>
-            <h1 className="text-4xl font-bold text-white">{serviceName}</h1>
-            <p className="text-gray-400">
-              {formatDate(start_date)} - {formatDate(end_date)}
-            </p>
+        <div className="mb-8">
+          <Link to="/" className="inline-block text-blue-400 hover:text-blue-300 mb-4 transition-colors">
+            ← Back to Dashboard
+          </Link>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-5xl font-bold text-white mb-2">
+                {serviceName}
+              </h1>
+              <p className="text-slate-400 text-lg">
+                {formatDate(start_date)} - {formatDate(end_date)}
+              </p>
+            </div>
+            <button
+              onClick={() => handleTriggerScrape(serviceName)}
+              disabled={scraping}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed"
+            >
+              {scraping ? 'Scraping...' : 'Trigger Scrape'}
+            </button>
           </div>
-          <button
-            onClick={() => handleTriggerScrape(serviceName)}
-            disabled={scraping}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-          >
-            {scraping ? 'Scraping...' : 'Trigger Scrape'}
-          </button>
         </div>
 
         {/* Chart */}
         {chartData.length > 0 && (
-          <div className="bg-slate-800 p-6 rounded-lg shadow-lg mb-8">
-            <h2 className="text-xl font-bold text-white mb-4">Daily Watch Time</h2>
+          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 mb-8">
+            <h2 className="text-2xl font-bold text-white mb-6">Daily Watch Time</h2>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="date" stroke="#9ca3af" />
-                <YAxis stroke="#9ca3af" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                <XAxis dataKey="date" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #374151' }}
-                  labelStyle={{ color: '#e5e7eb' }}
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
+                  labelStyle={{ color: '#e2e8f0' }}
                   formatter={(value) => [formatMinutes(value), 'Watch Time']}
                 />
                 <Line type="monotone" dataKey="minutes" stroke="#3b82f6" strokeWidth={2} />
@@ -124,31 +128,37 @@ const ServiceDetail = () => {
         )}
 
         {/* Watch History */}
-        <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold text-white mb-4">Watch History</h2>
+        <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
+          <h2 className="text-2xl font-bold text-white mb-6">Watch History</h2>
           {!history || history.length === 0 ? (
-            <p className="text-gray-400">No watch history found for this period</p>
+            <div className="text-center py-12">
+              <p className="text-slate-400">No watch history found for this period</p>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {history.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 transition-colors"
+                  className="bg-slate-700 border border-slate-600 p-5 rounded-lg hover:border-blue-500 transition-colors"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-white">
+                        {item.title}
+                      </h3>
                       {item.episode_info && (
-                        <p className="text-gray-400 text-sm">{item.episode_info}</p>
+                        <p className="text-slate-400 text-sm mt-1">
+                          {item.episode_info}
+                        </p>
                       )}
                     </div>
-                    <span className="text-blue-400 font-medium">
+                    <span className="text-blue-400 font-medium ml-4">
                       {formatMinutes(item.duration_minutes)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center text-sm text-gray-400">
+                  <div className="flex justify-between items-center text-sm text-slate-400">
                     <span>{formatDateTime(item.watched_at)}</span>
-                    {item.genre && <span className="text-gray-500">{item.genre}</span>}
+                    {item.genre && <span className="text-slate-500">{item.genre}</span>}
                   </div>
                 </div>
               ))}

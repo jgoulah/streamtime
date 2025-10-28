@@ -99,42 +99,44 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">StreamTime</h1>
-          <p className="text-gray-400">Track your streaming service watch time</p>
+          <h1 className="text-5xl font-bold text-white mb-3">
+            StreamTime
+          </h1>
+          <p className="text-slate-400 text-lg">Track your streaming service watch time across all platforms</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-slate-800 p-6 rounded-lg shadow-lg mb-8">
+        <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 mb-8">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <label className="text-gray-400 text-sm font-medium">View:</label>
+              <label className="text-slate-300 text-sm font-medium">View:</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => setFilterType('all')}
-                  className={`px-4 py-2 rounded transition-colors ${
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
                     filterType === 'all'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   }`}
                 >
                   All Time
                 </button>
                 <button
                   onClick={() => setFilterType('year')}
-                  className={`px-4 py-2 rounded transition-colors ${
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
                     filterType === 'year'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   }`}
                 >
                   Year
                 </button>
                 <button
                   onClick={() => setFilterType('month')}
-                  className={`px-4 py-2 rounded transition-colors ${
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
                     filterType === 'month'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   }`}
                 >
                   Month
@@ -144,11 +146,11 @@ const Dashboard = () => {
 
             {(filterType === 'year' || filterType === 'month') && (
               <div className="flex items-center gap-2">
-                <label className="text-gray-400 text-sm font-medium">Year:</label>
+                <label className="text-slate-300 text-sm font-medium">Year:</label>
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-blue-500 focus:outline-none"
+                  className="bg-slate-700 text-white px-4 py-2 rounded-md border border-slate-600 focus:border-blue-500 focus:outline-none"
                 >
                   {years.map((year) => (
                     <option key={year} value={year}>
@@ -161,11 +163,11 @@ const Dashboard = () => {
 
             {filterType === 'month' && (
               <div className="flex items-center gap-2">
-                <label className="text-gray-400 text-sm font-medium">Month:</label>
+                <label className="text-slate-300 text-sm font-medium">Month:</label>
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                  className="bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-blue-500 focus:outline-none"
+                  className="bg-slate-700 text-white px-4 py-2 rounded-md border border-slate-600 focus:border-blue-500 focus:outline-none"
                 >
                   {months.map((month) => (
                     <option key={month.value} value={month.value}>
@@ -176,7 +178,7 @@ const Dashboard = () => {
               </div>
             )}
 
-            <div className="ml-auto text-gray-400 text-sm">
+            <div className="ml-auto text-slate-400 text-sm">
               Showing: <span className="text-white font-medium">{getFilterLabel()}</span>
             </div>
           </div>
@@ -184,17 +186,25 @@ const Dashboard = () => {
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-            <h3 className="text-gray-400 text-sm uppercase mb-2">Total Watch Time</h3>
-            <p className="text-3xl font-bold text-white">{formatMinutes(totalMinutes)}</p>
+          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
+            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">Total Watch Time</h3>
+            <p className="text-4xl font-bold text-blue-400">
+              {formatMinutes(totalMinutes)}
+            </p>
           </div>
-          <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-            <h3 className="text-gray-400 text-sm uppercase mb-2">Total Shows/Movies</h3>
-            <p className="text-3xl font-bold text-white">{totalShows}</p>
+
+          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
+            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">Total Shows/Movies</h3>
+            <p className="text-4xl font-bold text-purple-400">
+              {totalShows.toLocaleString()}
+            </p>
           </div>
-          <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-            <h3 className="text-gray-400 text-sm uppercase mb-2">Active Services</h3>
-            <p className="text-3xl font-bold text-white">{services.length}</p>
+
+          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
+            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">Active Services</h3>
+            <p className="text-4xl font-bold text-pink-400">
+              {services.length}
+            </p>
           </div>
         </div>
 
