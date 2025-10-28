@@ -10,9 +10,10 @@ const ServiceDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [scraping, setScraping] = useState(false);
-  const [filterType, setFilterType] = useState('all'); // 'all', 'year', 'month'
+  const [filterType, setFilterType] = useState('all'); // 'all', 'year', 'month', 'day'
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
 
   // Generate year options (from 2009 to current year)
   const currentYear = new Date().getFullYear();
@@ -35,7 +36,7 @@ const ServiceDetail = () => {
 
   useEffect(() => {
     fetchServiceHistory();
-  }, [id, filterType, selectedYear, selectedMonth]);
+  }, [id, filterType, selectedYear, selectedMonth, selectedDay]);
 
   const fetchServiceHistory = async () => {
     try {
@@ -47,6 +48,10 @@ const ServiceDetail = () => {
       } else if (filterType === 'month') {
         params.year = selectedYear;
         params.month = selectedMonth;
+      } else if (filterType === 'day') {
+        params.year = selectedYear;
+        params.month = selectedMonth;
+        params.day = selectedDay;
       }
 
       const historyData = await api.getServiceHistory(id, params);
@@ -119,7 +124,8 @@ const ServiceDetail = () => {
     if (filterType === 'all') return 'All Time';
     if (filterType === 'year') return `Year: ${selectedYear}`;
     const monthLabel = months.find(m => m.value === selectedMonth)?.label;
-    return `${monthLabel} ${selectedYear}`;
+    if (filterType === 'month') return `${monthLabel} ${selectedYear}`;
+    return `${monthLabel} ${selectedDay}, ${selectedYear}`;
   };
 
   return (
@@ -185,10 +191,20 @@ const ServiceDetail = () => {
                 >
                   Month
                 </button>
+                <button
+                  onClick={() => setFilterType('day')}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    filterType === 'day'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  Day
+                </button>
               </div>
             </div>
 
-            {(filterType === 'year' || filterType === 'month') && (
+            {(filterType === 'year' || filterType === 'month' || filterType === 'day') && (
               <div className="flex items-center gap-2">
                 <label className="text-slate-300 text-sm font-medium">Year:</label>
                 <select
@@ -205,7 +221,7 @@ const ServiceDetail = () => {
               </div>
             )}
 
-            {filterType === 'month' && (
+            {(filterType === 'month' || filterType === 'day') && (
               <div className="flex items-center gap-2">
                 <label className="text-slate-300 text-sm font-medium">Month:</label>
                 <select
@@ -216,6 +232,23 @@ const ServiceDetail = () => {
                   {months.map((month) => (
                     <option key={month.value} value={month.value}>
                       {month.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {filterType === 'day' && (
+              <div className="flex items-center gap-2">
+                <label className="text-slate-300 text-sm font-medium">Day:</label>
+                <select
+                  value={selectedDay}
+                  onChange={(e) => setSelectedDay(parseInt(e.target.value))}
+                  className="bg-slate-700 text-white px-4 py-2 rounded-md border border-slate-600 focus:border-blue-500 focus:outline-none"
+                >
+                  {Array.from({ length: new Date(selectedYear, selectedMonth, 0).getDate() }, (_, i) => i + 1).map((day) => (
+                    <option key={day} value={day}>
+                      {day}
                     </option>
                   ))}
                 </select>

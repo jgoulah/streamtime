@@ -98,20 +98,30 @@ func (h *Handler) getServiceHistory(w http.ResponseWriter, r *http.Request) {
 	// Parse query parameters
 	query := r.URL.Query()
 
-	// Date range (support year/month filters, default to all-time)
+	// Date range (support year/month/day filters, default to all-time)
 	var startDate, endDate time.Time
 	yearStr := query.Get("year")
 	monthStr := query.Get("month")
+	dayStr := query.Get("day")
 
 	if yearStr != "" {
 		year, err := strconv.Atoi(yearStr)
 		if err == nil {
 			if monthStr != "" {
-				// Specific month
 				month, err := strconv.Atoi(monthStr)
 				if err == nil {
-					startDate = time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-					endDate = startDate.AddDate(0, 1, 0)
+					if dayStr != "" {
+						// Specific day
+						day, err := strconv.Atoi(dayStr)
+						if err == nil {
+							startDate = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+							endDate = startDate.AddDate(0, 0, 1)
+						}
+					} else {
+						// Specific month
+						startDate = time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+						endDate = startDate.AddDate(0, 1, 0)
+					}
 				}
 			} else {
 				// Entire year
@@ -121,7 +131,7 @@ func (h *Handler) getServiceHistory(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// If no year/month specified, default to all-time
+	// If no year/month/day specified, default to all-time
 	if startDate.IsZero() {
 		startDate = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 		endDate = time.Now().AddDate(1, 0, 0)
