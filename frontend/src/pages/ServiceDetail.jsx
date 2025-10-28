@@ -10,15 +10,46 @@ const ServiceDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [scraping, setScraping] = useState(false);
+  const [filterType, setFilterType] = useState('all'); // 'all', 'year', 'month'
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+
+  // Generate year options (from 2009 to current year)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 2009 + 1 }, (_, i) => 2009 + i).reverse();
+
+  const months = [
+    { value: 1, label: 'January' },
+    { value: 2, label: 'February' },
+    { value: 3, label: 'March' },
+    { value: 4, label: 'April' },
+    { value: 5, label: 'May' },
+    { value: 6, label: 'June' },
+    { value: 7, label: 'July' },
+    { value: 8, label: 'August' },
+    { value: 9, label: 'September' },
+    { value: 10, label: 'October' },
+    { value: 11, label: 'November' },
+    { value: 12, label: 'December' },
+  ];
 
   useEffect(() => {
     fetchServiceHistory();
-  }, [id]);
+  }, [id, filterType, selectedYear, selectedMonth]);
 
   const fetchServiceHistory = async () => {
     try {
       setLoading(true);
-      const historyData = await api.getServiceHistory(id);
+      const params = {};
+
+      if (filterType === 'year') {
+        params.year = selectedYear;
+      } else if (filterType === 'month') {
+        params.year = selectedYear;
+        params.month = selectedMonth;
+      }
+
+      const historyData = await api.getServiceHistory(id, params);
       setData(historyData);
       setError(null);
     } catch (err) {
@@ -80,6 +111,17 @@ const ServiceDetail = () => {
   // Get service name from first history item
   const serviceName = history && history.length > 0 ? history[0].service_name || 'Service' : 'Service';
 
+  // Calculate totals
+  const totalMinutes = history ? history.reduce((sum, item) => sum + item.duration_minutes, 0) : 0;
+  const totalShows = history ? history.length : 0;
+
+  const getFilterLabel = () => {
+    if (filterType === 'all') return 'All Time';
+    if (filterType === 'year') return `Year: ${selectedYear}`;
+    const monthLabel = months.find(m => m.value === selectedMonth)?.label;
+    return `${monthLabel} ${selectedYear}`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -104,6 +146,102 @@ const ServiceDetail = () => {
             >
               {scraping ? '⏳ Scraping...' : '🔄 Trigger Scrape'}
             </button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-xl mb-8">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-slate-300 text-sm font-medium">View:</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setFilterType('all')}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    filterType === 'all'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  All Time
+                </button>
+                <button
+                  onClick={() => setFilterType('year')}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    filterType === 'year'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  Year
+                </button>
+                <button
+                  onClick={() => setFilterType('month')}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    filterType === 'month'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  Month
+                </button>
+              </div>
+            </div>
+
+            {(filterType === 'year' || filterType === 'month') && (
+              <div className="flex items-center gap-2">
+                <label className="text-slate-300 text-sm font-medium">Year:</label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="bg-slate-700 text-white px-4 py-2 rounded-md border border-slate-600 focus:border-blue-500 focus:outline-none"
+                >
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {filterType === 'month' && (
+              <div className="flex items-center gap-2">
+                <label className="text-slate-300 text-sm font-medium">Month:</label>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                  className="bg-slate-700 text-white px-4 py-2 rounded-md border border-slate-600 focus:border-blue-500 focus:outline-none"
+                >
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="ml-auto text-slate-400 text-sm">
+              Showing: <span className="text-white font-medium">{getFilterLabel()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-lg border border-slate-700 shadow-lg hover:shadow-blue-500/10 transition-shadow">
+            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">📺 Total Watch Time</h3>
+            <p className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              {formatMinutes(totalMinutes)}
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-lg border border-slate-700 shadow-lg hover:shadow-purple-500/10 transition-shadow">
+            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">🎬 Total Shows/Movies</h3>
+            <p className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              {totalShows.toLocaleString()}
+            </p>
           </div>
         </div>
 

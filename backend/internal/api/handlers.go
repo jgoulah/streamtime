@@ -98,10 +98,34 @@ func (h *Handler) getServiceHistory(w http.ResponseWriter, r *http.Request) {
 	// Parse query parameters
 	query := r.URL.Query()
 
-	// Date range (default to current month)
-	now := time.Now()
-	startDate := parseDate(query.Get("start"), time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()))
-	endDate := parseDate(query.Get("end"), startDate.AddDate(0, 1, 0))
+	// Date range (support year/month filters, default to all-time)
+	var startDate, endDate time.Time
+	yearStr := query.Get("year")
+	monthStr := query.Get("month")
+
+	if yearStr != "" {
+		year, err := strconv.Atoi(yearStr)
+		if err == nil {
+			if monthStr != "" {
+				// Specific month
+				month, err := strconv.Atoi(monthStr)
+				if err == nil {
+					startDate = time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+					endDate = startDate.AddDate(0, 1, 0)
+				}
+			} else {
+				// Entire year
+				startDate = time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+				endDate = time.Date(year+1, 1, 1, 0, 0, 0, 0, time.UTC)
+			}
+		}
+	}
+
+	// If no year/month specified, default to all-time
+	if startDate.IsZero() {
+		startDate = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+		endDate = time.Now().AddDate(1, 0, 0)
+	}
 
 	// Pagination
 	limit := parseIntParam(query.Get("limit"), 100)
