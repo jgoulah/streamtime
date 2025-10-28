@@ -7,15 +7,15 @@ const ServiceCard = ({ service }) => {
   return (
     <Link
       to={`/service/${service_id}`}
-      className="block bg-slate-800 rounded-lg border-2 border-slate-700 hover:border-blue-500 transition-colors p-6"
+      className="block bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg border-2 border-slate-700 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 transition-all p-6"
     >
       {/* Color accent bar */}
       <div
-        className="h-1 w-16 rounded-full mb-4"
-        style={{ backgroundColor: color }}
+        className="h-1 w-16 rounded-full mb-4 shadow-lg"
+        style={{ backgroundColor: color, boxShadow: `0 0 20px ${color}40` }}
       />
 
-      <h2 className="text-2xl font-bold text-white mb-6">
+      <h2 className="text-2xl font-bold text-white mb-6 group-hover:text-blue-400 transition-colors">
         {service_name}
       </h2>
 
@@ -44,8 +44,8 @@ const ServiceCard = ({ service }) => {
         </div>
       </div>
 
-      <div className="mt-6 text-sm font-medium text-blue-400">
-        View details →
+      <div className="mt-6 text-sm font-medium text-blue-400 flex items-center gap-1">
+        View details <span className="text-lg">→</span>
       </div>
     </Link>
   );

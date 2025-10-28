@@ -95,18 +95,18 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-5xl font-bold text-white mb-3">
+          <h1 className="text-5xl font-bold text-white mb-3 bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
             StreamTime
           </h1>
           <p className="text-slate-400 text-lg">Track your streaming service watch time across all platforms</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 mb-8">
+        <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-xl mb-8">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <label className="text-slate-300 text-sm font-medium">View:</label>
@@ -186,23 +186,23 @@ const Dashboard = () => {
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
-            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">Total Watch Time</h3>
-            <p className="text-4xl font-bold text-blue-400">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-lg border border-slate-700 shadow-lg hover:shadow-blue-500/10 transition-shadow">
+            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">📺 Total Watch Time</h3>
+            <p className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
               {formatMinutes(totalMinutes)}
             </p>
           </div>
 
-          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
-            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">Total Shows/Movies</h3>
-            <p className="text-4xl font-bold text-purple-400">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-lg border border-slate-700 shadow-lg hover:shadow-purple-500/10 transition-shadow">
+            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">🎬 Total Shows/Movies</h3>
+            <p className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               {totalShows.toLocaleString()}
             </p>
           </div>
 
-          <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
-            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">Active Services</h3>
-            <p className="text-4xl font-bold text-pink-400">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-lg border border-slate-700 shadow-lg hover:shadow-pink-500/10 transition-shadow">
+            <h3 className="text-slate-300 text-xs uppercase tracking-wider font-semibold mb-2">⭐ Active Services</h3>
+            <p className="text-4xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
               {services.length}
             </p>
           </div>
