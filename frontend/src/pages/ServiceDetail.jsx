@@ -10,8 +10,6 @@ const ServiceDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [scraping, setScraping] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState(null);
 
   useEffect(() => {
     fetchServiceHistory();
@@ -41,34 +39,6 @@ const ServiceDetail = () => {
       alert(`Failed to trigger scraper: ${err.message}`);
     } finally {
       setScraping(false);
-    }
-  };
-
-  const handleFileUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setUploading(true);
-      setUploadResult(null);
-      const result = await api.uploadNetflixCSV(file);
-      setUploadResult(result);
-
-      // Refresh the history after successful upload
-      if (result.success && result.imported > 0) {
-        setTimeout(() => {
-          fetchServiceHistory();
-        }, 1000);
-      }
-    } catch (err) {
-      setUploadResult({
-        success: false,
-        error: err.message,
-      });
-    } finally {
-      setUploading(false);
-      // Reset file input
-      event.target.value = '';
     }
   };
 
@@ -124,57 +94,14 @@ const ServiceDetail = () => {
               {formatDate(start_date)} - {formatDate(end_date)}
             </p>
           </div>
-          <div className="flex gap-4">
-            <button
-              onClick={() => handleTriggerScrape(serviceName)}
-              disabled={scraping}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-            >
-              {scraping ? 'Scraping...' : 'Trigger Scrape'}
-            </button>
-            {serviceName === 'Netflix' && (
-              <label className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors cursor-pointer disabled:bg-gray-600">
-                {uploading ? 'Uploading...' : 'Upload CSV'}
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
+          <button
+            onClick={() => handleTriggerScrape(serviceName)}
+            disabled={scraping}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+          >
+            {scraping ? 'Scraping...' : 'Trigger Scrape'}
+          </button>
         </div>
-
-        {/* Upload Result Message */}
-        {uploadResult && (
-          <div className={`mb-4 p-4 rounded-lg ${uploadResult.success ? 'bg-green-900 border border-green-700' : 'bg-red-900 border border-red-700'}`}>
-            {uploadResult.success ? (
-              <div className="text-white">
-                <p className="font-semibold mb-2">✓ CSV Import Successful</p>
-                <p className="text-sm">
-                  Total rows: {uploadResult.total_rows} |
-                  Imported: {uploadResult.imported} |
-                  Skipped: {uploadResult.skipped} |
-                  Errors: {uploadResult.errors}
-                </p>
-                {uploadResult.error_details && uploadResult.error_details.length > 0 && (
-                  <details className="mt-2 text-sm">
-                    <summary className="cursor-pointer">Show error details</summary>
-                    <ul className="mt-2 ml-4 list-disc">
-                      {uploadResult.error_details.map((err, idx) => (
-                        <li key={idx}>{err}</li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-              </div>
-            ) : (
-              <p className="text-white">✗ Upload failed: {uploadResult.error}</p>
-            )}
-          </div>
-        )}
 
         {/* Chart */}
         {chartData.length > 0 && (

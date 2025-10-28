@@ -57,28 +57,6 @@ class APIService {
   async getHealth() {
     return this.get('/health');
   }
-
-  async uploadNetflixCSV(file) {
-    try {
-      const formData = new FormData();
-      formData.append('csv', file);
-
-      const response = await fetch(`${API_BASE_URL}/upload/netflix`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('CSV upload error:', error);
-      throw error;
-    }
-  }
 }
 
 export default new APIService();

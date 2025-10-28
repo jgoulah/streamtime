@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jgoulah/streamtime/internal/config"
 	"github.com/jgoulah/streamtime/internal/database"
-	"github.com/jgoulah/streamtime/internal/importer"
 	"github.com/jgoulah/streamtime/internal/scraper"
 )
 
@@ -233,52 +231,4 @@ func parseIntParam(param string, defaultVal int) int {
 		return defaultVal
 	}
 	return val
-}
-
-// uploadNetflixCSV handles Netflix viewing activity CSV upload
-func (h *Handler) uploadNetflixCSV(w http.ResponseWriter, r *http.Request) {
-	// Parse multipart form (10MB max)
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		respondError(w, http.StatusBadRequest, "Failed to parse form", err)
-		return
-	}
-
-	// Get the file from form
-	file, header, err := r.FormFile("csv")
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "No file provided", err)
-		return
-	}
-	defer file.Close()
-
-	log.Printf("Received CSV file: %s, size: %d bytes", header.Filename, header.Size)
-
-	// Check TMDB API key is configured
-	if h.config.TMDB.APIKey == "" {
-		respondError(w, http.StatusInternalServerError,
-			"TMDB API key not configured", fmt.Errorf("tmdb.api_key is required in config"))
-		return
-	}
-
-	// Create importer
-	netflixImporter := importer.NewNetflixImporter(h.db, h.config.TMDB.APIKey)
-
-	// Import CSV
-	result, err := netflixImporter.ImportCSV(file)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to import CSV", err)
-		return
-	}
-
-	// Return result
-	response := map[string]interface{}{
-		"success":       true,
-		"total_rows":    result.TotalRows,
-		"imported":      result.Imported,
-		"skipped":       result.Skipped,
-		"errors":        result.Errors,
-		"error_details": result.ErrorMessages,
-	}
-
-	respondJSON(w, http.StatusOK, response)
 }
