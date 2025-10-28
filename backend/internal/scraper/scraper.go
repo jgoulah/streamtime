@@ -96,7 +96,11 @@ func (m *Manager) Run(ctx context.Context, serviceName string) (*Result, error) 
 
 	// Store items in database
 	for i := range items {
-		items[i].ServiceID = service.ID
+		// Only set ServiceID if not already set by the scraper
+		// (Some scrapers like YouTube set it themselves to split items across services)
+		if items[i].ServiceID == 0 {
+			items[i].ServiceID = service.ID
+		}
 		if err := m.db.InsertWatchHistory(&items[i]); err != nil {
 			// Log error but continue processing other items
 			continue

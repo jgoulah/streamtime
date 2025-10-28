@@ -8,7 +8,9 @@
       "Bash(docker-compose down:*)",
       "Bash(go test:*)",
       "Bash(go get:*)",
-      "Bash(docker-compose up:*)"
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker-compose build:*)"
     ],
     "deny": [],
     "ask": []

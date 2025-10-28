@@ -48,6 +48,8 @@ type ScraperConfig struct {
 	Headless  bool   `yaml:"headless"`
 	Timeout   int    `yaml:"timeout"`    // seconds
 	UserAgent string `yaml:"user_agent"`
+	TestMode  bool   `yaml:"test_mode"`  // When true, only scrapes limited items
+	TestLimit int    `yaml:"test_limit"` // Number of items to scrape in test mode
 }
 
 // TMDBConfig holds The Movie Database API configuration
@@ -85,6 +87,9 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Scraper.UserAgent == "" {
 		cfg.Scraper.UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+	}
+	if cfg.Scraper.TestLimit == 0 {
+		cfg.Scraper.TestLimit = 100 // Default test limit
 	}
 
 	return &cfg, nil

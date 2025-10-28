@@ -8,15 +8,35 @@ server:
 services:
   netflix:
     enabled: true
-    email: your-email@example.com
-    password: your-password
-    use_oauth: false
+    # To get your cookies:
+    # 1. Login to Netflix in Chrome/Firefox
+    # 2. Open DevTools (F12) -> Application/Storage -> Cookies -> https://www.netflix.com
+    # 3. Copy the values for NetflixId and SecureNetflixId
+    cookies:
+      - name: "NetflixId"
+        value: "your-netflix-id-cookie-value"
+      - name: "SecureNetflixId"
+        value: "your-secure-netflix-id-cookie-value"
 
   youtube_tv:
     enabled: true
-    email: your-email@example.com
-    password: your-password
-    use_oauth: true
+    # To get your cookies:
+    # 1. Login to YouTube TV in Chrome/Firefox
+    # 2. Open DevTools (F12) -> Application/Storage -> Cookies -> https://tv.youtube.com
+    # 3. Run backend/cmd/export-cookies to automatically export all Google cookies
+    # 4. Or manually copy important cookies like SID, HSID, SSID, APISID, SAPISID, __Secure-* cookies
+    cookies:
+      - name: "SID"
+        value: "your-sid-value"
+      - name: "HSID"
+        value: "your-hsid-value"
+      - name: "SSID"
+        value: "your-ssid-value"
+      - name: "APISID"
+        value: "your-apisid-value"
+      - name: "SAPISID"
+        value: "your-sapisid-value"
+      # Add more cookies as needed - the export-cookies tool will show all required cookies
 
   amazon_video:
     enabled: true
@@ -31,3 +51,5 @@ scraper:
   headless: true
   timeout: 300  # seconds
   user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  test_mode: false  # When true, only scrapes limited items for testing
+  test_limit: 100  # Number of items to scrape in test mode
