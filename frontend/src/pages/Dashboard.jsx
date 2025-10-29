@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ServiceCard from '../components/ServiceCard';
+import DateFilter from '../components/DateFilter';
 import api from '../services/api';
 import { formatMinutes } from '../utils/format';
 
@@ -7,46 +8,19 @@ const Dashboard = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filterType, setFilterType] = useState('all'); // 'all', 'year', 'month'
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [filterParams, setFilterParams] = useState({});
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Generate year options (from 2009 to current year)
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 2009 + 1 }, (_, i) => 2009 + i).reverse();
+  const handleFilterChange = useCallback(({ params }) => {
+    setFilterParams(params);
+  }, []);
 
-  const months = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
-  ];
-
-  useEffect(() => {
-    fetchServices();
-  }, [filterType, selectedYear, selectedMonth]);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     try {
-      setLoading(true);
-      const params = {};
-
-      if (filterType === 'year') {
-        params.year = selectedYear;
-      } else if (filterType === 'month') {
-        params.year = selectedYear;
-        params.month = selectedMonth;
+      if (isInitialLoad) {
+        setLoading(true);
       }
-
-      const data = await api.getServices(params);
+      const data = await api.getServices(filterParams);
       setServices(data || []);
       setError(null);
     } catch (err) {
@@ -54,8 +28,13 @@ const Dashboard = () => {
       console.error('Error fetching services:', err);
     } finally {
       setLoading(false);
+      setIsInitialLoad(false);
     }
-  };
+  }, [filterParams, isInitialLoad]);
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   const totalMinutes = services.reduce((sum, service) => sum + service.total_minutes, 0);
   const totalShows = services.reduce((sum, service) => sum + service.total_shows, 0);
@@ -87,13 +66,6 @@ const Dashboard = () => {
     );
   }
 
-  const getFilterLabel = () => {
-    if (filterType === 'all') return 'All Time';
-    if (filterType === 'year') return `Year: ${selectedYear}`;
-    const monthLabel = months.find(m => m.value === selectedMonth)?.label;
-    return `${monthLabel} ${selectedYear}`;
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -106,82 +78,8 @@ const Dashboard = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-xl mb-8">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-slate-300 text-sm font-medium">View:</label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilterType('all')}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                    filterType === 'all'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
-                >
-                  All Time
-                </button>
-                <button
-                  onClick={() => setFilterType('year')}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                    filterType === 'year'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
-                >
-                  Year
-                </button>
-                <button
-                  onClick={() => setFilterType('month')}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                    filterType === 'month'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
-                >
-                  Month
-                </button>
-              </div>
-            </div>
-
-            {(filterType === 'year' || filterType === 'month') && (
-              <div className="flex items-center gap-2">
-                <label className="text-slate-300 text-sm font-medium">Year:</label>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="bg-slate-700 text-white px-4 py-2 rounded-md border border-slate-600 focus:border-blue-500 focus:outline-none"
-                >
-                  {years.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {filterType === 'month' && (
-              <div className="flex items-center gap-2">
-                <label className="text-slate-300 text-sm font-medium">Month:</label>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                  className="bg-slate-700 text-white px-4 py-2 rounded-md border border-slate-600 focus:border-blue-500 focus:outline-none"
-                >
-                  {months.map((month) => (
-                    <option key={month.value} value={month.value}>
-                      {month.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div className="ml-auto text-slate-400 text-sm">
-              Showing: <span className="text-white font-medium">{getFilterLabel()}</span>
-            </div>
-          </div>
+        <div className="mb-8">
+          <DateFilter onFilterChange={handleFilterChange} />
         </div>
 
         {/* Summary Stats */}

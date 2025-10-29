@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import ServiceLogo from './ServiceLogo';
 import { formatMinutes } from '../utils/format';
 
 const ServiceCard = ({ service }) => {
@@ -15,9 +16,9 @@ const ServiceCard = ({ service }) => {
         style={{ backgroundColor: color, boxShadow: `0 0 20px ${color}40` }}
       />
 
-      <h2 className="text-2xl font-bold text-white mb-6 group-hover:text-blue-400 transition-colors">
-        {service_name}
-      </h2>
+      <div className="mb-6 bg-slate-100 rounded-lg p-4 inline-block">
+        <ServiceLogo serviceName={service_name} size="lg" showFullTextFallback={true} />
+      </div>
 
       <div className="space-y-4">
         <div>

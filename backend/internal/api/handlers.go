@@ -137,6 +137,17 @@ func (h *Handler) getServiceHistory(w http.ResponseWriter, r *http.Request) {
 		endDate = time.Now().AddDate(1, 0, 0)
 	}
 
+	// Get service info
+	service, err := h.db.GetServiceByID(serviceID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to fetch service", err)
+		return
+	}
+	if service == nil {
+		respondError(w, http.StatusNotFound, "Service not found", fmt.Errorf("service with ID %d not found", serviceID))
+		return
+	}
+
 	// Pagination
 	limit := parseIntParam(query.Get("limit"), 100)
 	offset := parseIntParam(query.Get("offset"), 0)
@@ -155,6 +166,7 @@ func (h *Handler) getServiceHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]interface{}{
+		"service":     service,
 		"history":     history,
 		"daily_stats": dailyStats,
 		"start_date":  startDate.Format("2006-01-02"),

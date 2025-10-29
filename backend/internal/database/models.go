@@ -18,6 +18,7 @@ type Service struct {
 type WatchHistory struct {
 	ID              int64     `json:"id"`
 	ServiceID       int64     `json:"service_id"`
+	ServiceName     string    `json:"service_name"`
 	Title           string    `json:"title"`
 	DurationMinutes int       `json:"duration_minutes"`
 	WatchedAt       time.Time `json:"watched_at"`

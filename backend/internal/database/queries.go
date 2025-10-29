@@ -125,13 +125,14 @@ func (db *DB) GetServiceStats(startDate, endDate time.Time) ([]ServiceStats, err
 // GetWatchHistory returns watch history for a service within a date range
 func (db *DB) GetWatchHistory(serviceID int64, startDate, endDate time.Time, limit, offset int) ([]WatchHistory, error) {
 	rows, err := db.Query(`
-		SELECT id, service_id, title, duration_minutes, watched_at,
-		       episode_info, thumbnail_url, genre, created
-		FROM watch_history
-		WHERE service_id = ?
-		  AND watched_at >= ?
-		  AND watched_at < ?
-		ORDER BY watched_at DESC
+		SELECT wh.id, wh.service_id, s.name as service_name, wh.title, wh.duration_minutes, wh.watched_at,
+		       wh.episode_info, wh.thumbnail_url, wh.genre, wh.created
+		FROM watch_history wh
+		JOIN services s ON wh.service_id = s.id
+		WHERE wh.service_id = ?
+		  AND wh.watched_at >= ?
+		  AND wh.watched_at < ?
+		ORDER BY wh.watched_at DESC
 		LIMIT ? OFFSET ?
 	`, serviceID, startDate, endDate, limit, offset)
 	if err != nil {
@@ -143,7 +144,7 @@ func (db *DB) GetWatchHistory(serviceID int64, startDate, endDate time.Time, lim
 	for rows.Next() {
 		var wh WatchHistory
 		err := rows.Scan(
-			&wh.ID, &wh.ServiceID, &wh.Title, &wh.DurationMinutes,
+			&wh.ID, &wh.ServiceID, &wh.ServiceName, &wh.Title, &wh.DurationMinutes,
 			&wh.WatchedAt, &wh.EpisodeInfo, &wh.ThumbnailURL,
 			&wh.Genre, &wh.Created,
 		)
