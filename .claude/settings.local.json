@@ -10,7 +10,8 @@
       "Bash(go get:*)",
       "Bash(docker-compose up:*)",
       "Bash(docker-compose restart:*)",
-      "Bash(docker-compose build:*)"
+      "Bash(docker-compose build:*)",
+      "Bash(sqlite3:*)"
     ],
     "deny": [],
     "ask": []

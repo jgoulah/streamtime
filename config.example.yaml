@@ -40,9 +40,22 @@ services:
 
   amazon_video:
     enabled: true
-    email: your-email@example.com
-    password: your-password
-    use_oauth: false
+    # To get your cookies:
+    # 1. Login to Prime Video in Chrome/Firefox
+    # 2. Open DevTools (F12) -> Application/Storage -> Cookies -> https://www.amazon.com
+    # 3. Copy the values for important cookies (session-id, ubid-main, at-main, etc.)
+    cookies:
+      - name: "session-id"
+        value: "your-session-id-value"
+      - name: "session-id-time"
+        value: "your-session-id-time-value"
+      - name: "ubid-main"
+        value: "your-ubid-main-value"
+      - name: "at-main"
+        value: "your-at-main-value"
+      - name: "sess-at-main"
+        value: "your-sess-at-main-value"
+      # Add more cookies as needed
 
 scraper:
   # Cron format: minute hour day month weekday

@@ -47,7 +47,10 @@ func main() {
 	youtubeTVScraper := scraper.NewYouTubeTVScraper(cfg, db)
 	scraperMgr.Register(youtubeTVScraper)
 
-	log.Println("Scraper manager initialized with Netflix and YouTube TV scrapers")
+	amazonScraper := scraper.NewAmazonScraper(cfg, db)
+	scraperMgr.Register(amazonScraper)
+
+	log.Println("Scraper manager initialized with Netflix, YouTube TV, and Amazon Video scrapers")
 
 	// Create API handler
 	handler := api.NewHandler(db, scraperMgr, cfg)
