@@ -11,7 +11,11 @@
       "Bash(docker-compose up:*)",
       "Bash(docker-compose restart:*)",
       "Bash(docker-compose build:*)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "mcp__serena__list_dir",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__write_memory",
+      "mcp__serena__list_memories"
     ],
     "deny": [],
     "ask": []
