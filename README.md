@@ -30,16 +30,26 @@ Personal streaming service watch time tracker. Monitors and displays screen time
    cp config.example.yaml config.yaml
    ```
 
-2. Edit `config.yaml` with your streaming service credentials:
-   ```yaml
-   services:
-     netflix:
-       enabled: true
-       email: your-email@example.com
-       password: your-password
+2. Export authentication cookies for your streaming services:
+   ```bash
+   # Netflix
+   ./backend/export-cookies --service netflix
+
+   # YouTube TV
+   ./backend/export-cookies --service youtube_tv
+
+   # Amazon Video
+   ./backend/export-cookies --service amazon_video
    ```
 
-3. Configure scraping schedule (default: daily at 3 AM)
+   The tool will:
+   - Open a browser window for you to log in
+   - Automatically extract and validate cookies
+   - Update `config.yaml` with the correct configuration
+
+   See [Cookie Export Tool Documentation](backend/cmd/export-cookies/README.md) for details.
+
+3. (Optional) Configure scraping schedule (default: daily at 3 AM)
 
 ### Running with Docker
 
@@ -64,6 +74,24 @@ cd frontend
 npm install
 npm start
 ```
+
+## Cookie Maintenance
+
+Cookies typically expire after 30-90 days. To maintain your scrapers:
+
+**Check if cookies are valid:**
+```bash
+./backend/export-cookies --service netflix --validate
+./backend/export-cookies --service youtube_tv --validate
+./backend/export-cookies --service amazon_video --validate
+```
+
+**Refresh expired cookies:**
+```bash
+./backend/export-cookies --service youtube_tv
+```
+
+The tool will open a browser, you log in, and it automatically updates your config.
 
 ## API Endpoints
 

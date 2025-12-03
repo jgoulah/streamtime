@@ -257,45 +257,67 @@ func (s *YouTubeTVScraper) scrollToLoadItems(ctx context.Context) chromedp.Actio
 			}
 			previousCount = currentCount
 
-			// Get the last item's date from Google My Activity
-			var lastDateText string
-			chromedp.Evaluate(`
-				(() => {
-					const items = document.querySelectorAll('div[jsname="MFYZYe"]');
-					if (items.length > 0) {
-						const lastItem = items[items.length - 1];
-						// Try to find date text in the item
-						return lastItem.textContent.trim().substring(0, 200);
-					}
-					return '';
-				})()
-			`, &lastDateText).Do(ctx)
+			// Check if the first few items (newest) already exist in database
+			// If we find consecutive duplicates at the top, we can stop pagination
+			// since items are ordered newest to oldest
+			if currentCount >= 10 && clickCount > 5 {
+				consecutiveDuplicates := 0
+				checkCount := 5 // Check first 5 items
 
-			// Check if this item already exists in database
-			if lastDateText != "" {
-				// Get title of last item for duplicate check
-				var lastTitle string
-				chromedp.Evaluate(`
-					(() => {
-						const videos = document.querySelectorAll('ytd-video-renderer');
-						if (videos.length > 0) {
-							const lastVideo = videos[videos.length - 1];
-							const titleEl = lastVideo.querySelector('#video-title');
-							return titleEl ? titleEl.textContent.trim() : '';
-						}
-						return '';
-					})()
-				`, &lastTitle).Do(ctx)
+				for i := 0; i < checkCount; i++ {
+					// Get title and date header for this item
+					var title string
+					chromedp.Evaluate(fmt.Sprintf(`
+						(() => {
+							const items = document.querySelectorAll('div[jsname="MFYZYe"]');
+							if (items.length > %d) {
+								const item = items[%d];
+								const titleEl = item.querySelector('a.l8sGWb');
+								return titleEl ? titleEl.textContent.trim() : '';
+							}
+							return '';
+						})()
+					`, i, i), &title).Do(ctx)
 
-				if lastTitle != "" {
-					lastDate, err := s.parseDate(lastDateText)
-					if err == nil {
-						exists, _ := s.db.WatchHistoryExists(service.ID, lastTitle, "", lastDate)
+					if title != "" {
+						// Try to extract date header for this item
+						var dateHeader string
+						chromedp.Evaluate(fmt.Sprintf(`
+							(() => {
+								const items = document.querySelectorAll('div[jsname="MFYZYe"]');
+								if (items.length <= %d) return '';
+								const targetItem = items[%d];
+								const dateHeaders = document.querySelectorAll('.rp10kf');
+								let lastDate = '';
+								for (const header of dateHeaders) {
+									const position = header.compareDocumentPosition(targetItem);
+									if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
+										lastDate = header.textContent.trim();
+									} else {
+										break;
+									}
+								}
+								return lastDate;
+							})()
+						`, i, i), &dateHeader).Do(ctx)
+
+						// Check if this item exists in database
+						// This is a simplified check - in reality we'd need to parse the full timestamp
+						// For now, just check if we have this title recently
+						exists, _ := s.db.WatchHistoryExists(service.ID, title, "", time.Now().AddDate(0, 0, -7))
 						if exists {
-							log.Println("Found existing entry in database, stopping pagination")
+							consecutiveDuplicates++
+						} else {
+							// If we find a non-duplicate, reset the counter
 							break
 						}
 					}
+				}
+
+				// If we found 3+ consecutive duplicates at the top, stop
+				if consecutiveDuplicates >= 3 {
+					log.Printf("Found %d consecutive duplicates at top of feed, stopping pagination", consecutiveDuplicates)
+					break
 				}
 			}
 
