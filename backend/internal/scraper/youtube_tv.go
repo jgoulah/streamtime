@@ -265,51 +265,61 @@ func (s *YouTubeTVScraper) scrollToLoadItems(ctx context.Context) chromedp.Actio
 				checkCount := 5 // Check first 5 items
 
 				for i := 0; i < checkCount; i++ {
-					// Get title and date header for this item
-					var title string
+					// Get title, time text, and date header for this item
+					type ItemData struct {
+						Title      string
+						TimeText   string
+						DateHeader string
+					}
+					var itemData ItemData
+
 					chromedp.Evaluate(fmt.Sprintf(`
 						(() => {
 							const items = document.querySelectorAll('div[jsname="MFYZYe"]');
-							if (items.length > %d) {
-								const item = items[%d];
-								const titleEl = item.querySelector('a.l8sGWb');
-								return titleEl ? titleEl.textContent.trim() : '';
-							}
-							return '';
-						})()
-					`, i, i), &title).Do(ctx)
+							if (items.length <= %d) return {title: '', timeText: '', dateHeader: ''};
 
-					if title != "" {
-						// Try to extract date header for this item
-						var dateHeader string
-						chromedp.Evaluate(fmt.Sprintf(`
-							(() => {
-								const items = document.querySelectorAll('div[jsname="MFYZYe"]');
-								if (items.length <= %d) return '';
-								const targetItem = items[%d];
-								const dateHeaders = document.querySelectorAll('.rp10kf');
-								let lastDate = '';
-								for (const header of dateHeaders) {
-									const position = header.compareDocumentPosition(targetItem);
-									if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
-										lastDate = header.textContent.trim();
-									} else {
-										break;
-									}
+							const item = items[%d];
+							const titleEl = item.querySelector('a.l8sGWb');
+							const timeEl = item.querySelector('div.wlgrwd');
+
+							// Get date header
+							const dateHeaders = document.querySelectorAll('.rp10kf');
+							let lastDate = '';
+							for (const header of dateHeaders) {
+								const position = header.compareDocumentPosition(item);
+								if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
+									lastDate = header.textContent.trim();
+								} else {
+									break;
 								}
-								return lastDate;
-							})()
-						`, i, i), &dateHeader).Do(ctx)
+							}
 
-						// Check if this item exists in database
-						// This is a simplified check - in reality we'd need to parse the full timestamp
-						// For now, just check if we have this title recently
-						exists, _ := s.db.WatchHistoryExists(service.ID, title, "", time.Now().AddDate(0, 0, -7))
-						if exists {
-							consecutiveDuplicates++
-						} else {
-							// If we find a non-duplicate, reset the counter
-							break
+							return {
+								title: titleEl ? titleEl.textContent.trim() : '',
+								timeText: timeEl ? timeEl.textContent.trim() : '',
+								dateHeader: lastDate
+							};
+						})()
+					`, i, i), &itemData).Do(ctx)
+
+					if itemData.Title != "" && itemData.DateHeader != "" && itemData.TimeText != "" {
+						// Extract just the time part (before the bullet)
+						timePart := itemData.TimeText
+						if idx := strings.Index(itemData.TimeText, "•"); idx > 0 {
+							timePart = strings.TrimSpace(itemData.TimeText[:idx])
+						}
+
+						// Parse the date and time
+						watchedAt, err := s.parseDateAndTime(itemData.DateHeader, timePart)
+						if err == nil {
+							// Check if this exact item exists in database
+							exists, _ := s.db.WatchHistoryExists(service.ID, itemData.Title, "", watchedAt)
+							if exists {
+								consecutiveDuplicates++
+							} else {
+								// If we find a non-duplicate, reset the counter
+								break
+							}
 						}
 					}
 				}
