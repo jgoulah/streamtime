@@ -11,6 +11,8 @@ data/
 backend/streamtime
 backend/tmp/
 backend/server
+backend/scraper
+backend/export-cookies
 
 # Frontend
 frontend/node_modules/

@@ -19,7 +19,14 @@
       "mcp__serena__activate_project",
       "mcp__serena__read_memory",
       "mcp__serena__search_for_pattern",
-      "Bash(docker-compose stop:*)"
+      "Bash(docker-compose stop:*)",
+      "Bash(make build:*)",
+      "Bash(make clean:*)",
+      "Bash(make build-all:*)",
+      "Bash(ls:*)",
+      "Bash(./backend/server:*)",
+      "Bash(make build-remote:*)",
+      "mcp__serena__find_file"
     ],
     "deny": [],
     "ask": []

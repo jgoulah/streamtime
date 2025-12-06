@@ -1,0 +1,14 @@
+[Unit]
+Description=StreamTime Server
+After=network.target
+
+[Service]
+Type=simple
+User=jgoulah
+WorkingDirectory=/opt/streamtime
+ExecStart=/opt/streamtime/server --config /usr/local/etc/streamtime/config.yaml --database /usr/local/etc/streamtime/streamtime.db
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

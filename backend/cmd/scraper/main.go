@@ -1,15 +1,10 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"fmt"
 	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 
-	"github.com/jgoulah/streamtime/internal/api"
 	"github.com/jgoulah/streamtime/internal/config"
 	"github.com/jgoulah/streamtime/internal/database"
 	"github.com/jgoulah/streamtime/internal/scraper"
@@ -19,6 +14,7 @@ func main() {
 	// Parse command-line flags
 	configPath := flag.String("config", "./config.yaml", "Path to config.yaml file")
 	dbPath := flag.String("database", "", "Path to database file (overrides config)")
+	service := flag.String("service", "", "Specific service to scrape (netflix, youtube_tv, amazon_video). If empty, scrapes all enabled services")
 	flag.Parse()
 
 	// Load configuration
@@ -56,35 +52,31 @@ func main() {
 	amazonScraper := scraper.NewAmazonScraper(cfg, db)
 	scraperMgr.Register(amazonScraper)
 
-	log.Println("Scraper manager initialized with Netflix, YouTube TV, and Amazon Video scrapers")
+	// Create context with timeout
+	ctx := context.Background()
 
-	// Create API handler
-	handler := api.NewHandler(db, scraperMgr, cfg)
-	router := api.NewRouter(handler)
-
-	// Start HTTP server
-	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	server := &http.Server{
-		Addr:    addr,
-		Handler: router,
-	}
-
-	// Handle graceful shutdown
-	go func() {
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-		<-sigChan
-
-		log.Println("Shutting down server...")
-		if err := server.Close(); err != nil {
-			log.Printf("Error closing server: %v", err)
+	// Run scraper(s)
+	if *service != "" {
+		// Run specific service
+		log.Printf("Running scraper for service: %s", *service)
+		result, err := scraperMgr.Run(ctx, *service)
+		if err != nil {
+			log.Fatalf("Scraper failed: %v", err)
 		}
-	}()
-
-	log.Printf("Server starting on %s", addr)
-	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("Server failed: %v", err)
+		log.Printf("Scraper completed: %s - %d items scraped in %v",
+			result.ServiceName, result.ItemsScraped, result.EndTime.Sub(result.StartTime))
+	} else {
+		// Run all enabled scrapers
+		log.Println("Running all enabled scrapers...")
+		results, _ := scraperMgr.RunAll(ctx)
+		log.Println("All scrapers completed")
+		for _, result := range results {
+			if result.Success {
+				log.Printf("  ✓ %s: %d items in %v",
+					result.ServiceName, result.ItemsScraped, result.EndTime.Sub(result.StartTime))
+			} else {
+				log.Printf("  ✗ %s: failed - %v", result.ServiceName, result.Error)
+			}
+		}
 	}
-
-	log.Println("Server stopped")
 }

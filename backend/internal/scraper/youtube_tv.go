@@ -362,16 +362,21 @@ func (s *YouTubeTVScraper) extractViewingHistory(ctx context.Context) ([]databas
 	log.Printf("Found %d activity items to extract", len(nodes))
 
 	// Extract data from each video
+	failedCount := 0
 	for i, node := range nodes {
 		item, err := s.extractHistoryItem(ctx, node, i)
 		if err != nil {
-			log.Printf("Failed to extract item %d: %v", i, err)
+			failedCount++
 			continue
 		}
 
 		if item != nil {
 			items = append(items, *item)
 		}
+	}
+
+	if failedCount > 0 {
+		log.Printf("Skipped %d non-video items (date headers, UI elements, etc.)", failedCount)
 	}
 
 	return items, nil

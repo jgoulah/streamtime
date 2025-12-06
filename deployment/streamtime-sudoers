@@ -1,0 +1,8 @@
+# Allow user to manage streamtime service without password
+jgoulah ALL=(ALL) NOPASSWD: /bin/systemctl start streamtime
+jgoulah ALL=(ALL) NOPASSWD: /bin/systemctl stop streamtime
+jgoulah ALL=(ALL) NOPASSWD: /bin/systemctl restart streamtime
+jgoulah ALL=(ALL) NOPASSWD: /bin/systemctl status streamtime
+jgoulah ALL=(ALL) NOPASSWD: /bin/systemctl daemon-reload
+jgoulah ALL=(ALL) NOPASSWD: /bin/systemctl enable streamtime
+jgoulah ALL=(ALL) NOPASSWD: /bin/cp /opt/streamtime/streamtime.service /etc/systemd/system/streamtime.service
