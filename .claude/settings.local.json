@@ -26,7 +26,12 @@
       "Bash(ls:*)",
       "Bash(./backend/server:*)",
       "Bash(make build-remote:*)",
-      "mcp__serena__find_file"
+      "mcp__serena__find_file",
+      "mcp__serena__find_symbol",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__new_page",
+      "Bash(make build-scraper:*)",
+      "Bash(./backend/scraper:*)"
     ],
     "deny": [],
     "ask": []
