@@ -115,7 +115,7 @@ refresh-cookies: build-export-cookies
 		exit 1; \
 	fi
 	@echo "Refreshing cookies for $(SERVICE)..."
-	cd $(BACKEND_DIR) && ./export-cookies --service $(SERVICE)
+	./$(BACKEND_DIR)/export-cookies --service $(SERVICE) --config config.yaml
 
 ## setup-systemd-remote: Set up and start systemd service on remote host
 setup-systemd-remote:

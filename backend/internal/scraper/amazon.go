@@ -123,12 +123,9 @@ func (s *AmazonScraper) navigateToWatchHistory(ctx context.Context) error {
 		return fmt.Errorf("failed to navigate to watch history: %w", err)
 	}
 
-	// Wait for content to load (adjust selector after inspection)
-	time.Sleep(5 * time.Second)
-
-	log.Println("Waiting for content to load...")
-	// TODO: Add proper wait condition based on actual page structure
-	// Example: chromedp.WaitVisible(`div[data-testid="watch-history"]`)
+	// Wait longer for the AJAX/React content to load
+	log.Println("Waiting for watch history content to load...")
+	time.Sleep(15 * time.Second)
 
 	return nil
 }
@@ -140,23 +137,51 @@ func (s *AmazonScraper) extractViewingHistory(ctx context.Context) ([]database.W
 
 	log.Println("Extracting viewing history from Amazon Prime Video...")
 
-	// Find all date sections (div.RdNoU_.j98KWz)
-	var dateSections []*cdp.Node
+	// Extract all data using JavaScript to avoid chromedp blocking issues
+	// The structure is: date sections and show lists are siblings, not nested
+	// We need to pair them up by finding the next sibling after each date section
+	var extractedData []map[string]interface{}
 	if err := chromedp.Run(ctx,
-		chromedp.Nodes(`div.RdNoU_.j98KWz`, &dateSections, chromedp.ByQueryAll),
+		chromedp.Evaluate(`
+			// Find all date sections
+			const dateSections = Array.from(document.querySelectorAll('div.RdNoU_.j98KWz'));
+
+			dateSections.map(dateSection => {
+				// Get the date text from h3
+				const dateH3 = dateSection.querySelector('h3');
+				const dateText = dateH3 ? dateH3.textContent.trim() : '';
+
+				// Find the next sibling that contains show containers
+				// The shows are likely in a sibling element after the date section
+				let showsContainer = dateSection.nextElementSibling;
+				while (showsContainer && !showsContainer.querySelectorAll('li.avarm3').length) {
+					showsContainer = showsContainer.nextElementSibling;
+				}
+
+				const showContainers = showsContainer ? showsContainer.querySelectorAll('li.avarm3') : [];
+
+				const shows = Array.from(showContainers).map(container => {
+					const titleEl = container.querySelector('div._6YbHut a._1NNx6V.ZrYV9r');
+					const title = titleEl ? titleEl.textContent.trim() : '';
+
+					const episodeEls = container.querySelectorAll('ul.zcH\\+eA li.avarm3._4yED5J div.vTfuZU p');
+					const episodes = Array.from(episodeEls).map(ep => ep.textContent.trim());
+
+					return { title, episodes };
+				}).filter(show => show.title !== '');
+
+				return { dateText, shows };
+			}).filter(section => section.dateText !== '');
+		`, &extractedData),
 	); err != nil {
-		return nil, fmt.Errorf("failed to find date sections: %w", err)
+		return nil, fmt.Errorf("failed to extract data with JavaScript: %w", err)
 	}
 
-	log.Printf("Found %d date sections", len(dateSections))
+	log.Printf("JavaScript extracted %d date sections", len(extractedData))
 
-	for _, dateSection := range dateSections {
-		// Extract the date from h3 tag within this section
-		var dateText string
-		if err := chromedp.Run(ctx,
-			chromedp.TextContent(`h3`, &dateText, chromedp.ByQuery, chromedp.FromNode(dateSection)),
-		); err != nil {
-			log.Printf("Failed to extract date from section: %v", err)
+	for _, dateSection := range extractedData {
+		dateText, ok := dateSection["dateText"].(string)
+		if !ok || dateText == "" {
 			continue
 		}
 
@@ -168,35 +193,25 @@ func (s *AmazonScraper) extractViewingHistory(ctx context.Context) ([]database.W
 
 		log.Printf("Processing date section: %s", dateText)
 
-		// Find all show/movie containers within this date section
-		var showContainers []*cdp.Node
-		if err := chromedp.Run(ctx,
-			chromedp.Nodes(`div._6YbHut`, &showContainers, chromedp.ByQueryAll, chromedp.FromNode(dateSection)),
-		); err != nil {
-			log.Printf("Failed to find show containers for date %s: %v", dateText, err)
-			continue
-		}
+		shows, _ := dateSection["shows"].([]interface{})
+		log.Printf("Found %d shows in this date section", len(shows))
 
-		log.Printf("Found %d shows/movies for date %s", len(showContainers), dateText)
-
-		for _, container := range showContainers {
-			// Extract the title
-			var title string
-			if err := chromedp.Run(ctx,
-				chromedp.TextContent(`a._1NNx6V.ZrYV9r`, &title, chromedp.ByQuery, chromedp.FromNode(container)),
-			); err != nil {
-				log.Printf("Failed to extract title: %v", err)
+		for _, showData := range shows {
+			show, ok := showData.(map[string]interface{})
+			if !ok {
 				continue
 			}
 
-			title = strings.TrimSpace(title)
+			title, ok := show["title"].(string)
+			if !ok || title == "" {
+				continue
+			}
+
 			log.Printf("Processing: %s", title)
 
-			// Check if there are episodes (p.vTfuZU)
-			var episodeNodes []*cdp.Node
-			if err := chromedp.Run(ctx,
-				chromedp.Nodes(`p.vTfuZU`, &episodeNodes, chromedp.ByQueryAll, chromedp.FromNode(container)),
-			); err != nil || len(episodeNodes) == 0 {
+			episodes, _ := show["episodes"].([]interface{})
+
+			if len(episodes) == 0 {
 				// No episodes - this is a movie or single video
 				item := database.WatchHistory{
 					Title:           title,
@@ -210,18 +225,13 @@ func (s *AmazonScraper) extractViewingHistory(ctx context.Context) ([]database.W
 				log.Printf("Added movie/video: %s", title)
 			} else {
 				// This is a TV show with episodes
-				log.Printf("Found %d episodes for show: %s", len(episodeNodes), title)
+				log.Printf("Found %d episodes for show: %s", len(episodes), title)
 
-				for _, episodeNode := range episodeNodes {
-					var episodeName string
-					if err := chromedp.Run(ctx,
-						chromedp.TextContent(`.`, &episodeName, chromedp.ByQuery, chromedp.FromNode(episodeNode)),
-					); err != nil {
-						log.Printf("Failed to extract episode name: %v", err)
+				for _, ep := range episodes {
+					episodeName, ok := ep.(string)
+					if !ok || episodeName == "" {
 						continue
 					}
-
-					episodeName = strings.TrimSpace(episodeName)
 
 					// Create entry with format "Title - Episode Name"
 					item := database.WatchHistory{
