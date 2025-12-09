@@ -31,7 +31,11 @@
       "mcp__chrome-devtools__list_pages",
       "mcp__chrome-devtools__new_page",
       "Bash(make build-scraper:*)",
-      "Bash(./backend/scraper:*)"
+      "Bash(./backend/scraper:*)",
+      "Bash(grep:*)",
+      "WebSearch",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
     ],
     "deny": [],
     "ask": []

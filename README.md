@@ -1,6 +1,6 @@
 # StreamTime
 
-Personal streaming service watch time tracker. Monitors and displays screen time across Netflix, YouTube TV, Amazon Video, and other streaming platforms.
+Personal streaming service watch time tracker. Monitors and displays screen time across Netflix, YouTube TV, Amazon Video, Hulu, and other streaming platforms.
 
 ## Features
 
@@ -36,11 +36,13 @@ Personal streaming service watch time tracker. Monitors and displays screen time
    make refresh-cookies SERVICE=netflix
    make refresh-cookies SERVICE=youtube_tv
    make refresh-cookies SERVICE=amazon_video
+   make refresh-cookies SERVICE=hulu
 
    # Or directly
    ./backend/export-cookies --service netflix
    ./backend/export-cookies --service youtube_tv
    ./backend/export-cookies --service amazon_video
+   ./backend/export-cookies --service hulu
    ```
 
    The tool will:
@@ -75,6 +77,7 @@ make run
 make refresh-cookies SERVICE=netflix      # Refresh Netflix cookies
 make refresh-cookies SERVICE=youtube_tv   # Refresh YouTube TV cookies
 make refresh-cookies SERVICE=amazon_video # Refresh Amazon Video cookies
+make refresh-cookies SERVICE=hulu         # Refresh Hulu cookies
 
 # Docker commands
 make docker-build    # Build Docker images
@@ -153,7 +156,7 @@ On the remote host, run:
 **Scraper** (`/opt/streamtime/scraper`):
 - `--config <path>` - Path to config.yaml file (default: `./config.yaml`)
 - `--database <path>` - Path to database file, overrides config setting (optional)
-- `--service <name>` - Specific service to scrape (netflix, youtube_tv, amazon_video). If omitted, runs all enabled services.
+- `--service <name>` - Specific service to scrape (Netflix, YouTube TV, Amazon Video, Hulu). If omitted, runs all enabled services.
 
 ### Cron Setup
 
@@ -180,11 +183,13 @@ Cookies typically expire after 30-90 days. To maintain your scrapers:
 make refresh-cookies SERVICE=netflix
 make refresh-cookies SERVICE=youtube_tv
 make refresh-cookies SERVICE=amazon_video
+make refresh-cookies SERVICE=hulu
 
 # Or directly
 ./backend/export-cookies --service netflix
 ./backend/export-cookies --service youtube_tv
 ./backend/export-cookies --service amazon_video
+./backend/export-cookies --service hulu
 ```
 
 **Check if cookies are valid:**
@@ -192,6 +197,7 @@ make refresh-cookies SERVICE=amazon_video
 ./backend/export-cookies --service netflix --validate
 ./backend/export-cookies --service youtube_tv --validate
 ./backend/export-cookies --service amazon_video --validate
+./backend/export-cookies --service hulu --validate
 ```
 
 The tool will open a browser, you log in, and it automatically updates your config.

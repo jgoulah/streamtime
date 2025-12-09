@@ -14,7 +14,7 @@ func main() {
 	// Parse command-line flags
 	configPath := flag.String("config", "./config.yaml", "Path to config.yaml file")
 	dbPath := flag.String("database", "", "Path to database file (overrides config)")
-	service := flag.String("service", "", "Specific service to scrape (netflix, youtube_tv, amazon_video). If empty, scrapes all enabled services")
+	service := flag.String("service", "", "Specific service to scrape (Netflix, YouTube TV, Amazon Video, Hulu). If empty, scrapes all enabled services")
 	flag.Parse()
 
 	// Load configuration
@@ -51,6 +51,9 @@ func main() {
 
 	amazonScraper := scraper.NewAmazonScraper(cfg, db)
 	scraperMgr.Register(amazonScraper)
+
+	huluScraper := scraper.NewHuluScraper(cfg, db)
+	scraperMgr.Register(huluScraper)
 
 	// Create context with timeout
 	ctx := context.Background()

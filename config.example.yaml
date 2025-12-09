@@ -57,6 +57,18 @@ services:
         value: "your-sess-at-main-value"
       # Add more cookies as needed
 
+  hulu:
+    enabled: true
+    # To get your cookies:
+    # 1. Run: ./backend/export-cookies --service hulu
+    # 2. Or manually login to Hulu in Chrome/Firefox
+    # 3. Open DevTools (F12) -> Application/Storage -> Cookies -> https://www.hulu.com
+    # 4. Copy the values for important cookies (hulu_session, etc.)
+    cookies:
+      - name: "hulu_session"
+        value: "your-hulu-session-value"
+      # Add more cookies as needed - the export-cookies tool will export all required cookies
+
 scraper:
   # Cron format: minute hour day month weekday
   # "0 3 * * *" = Daily at 3:00 AM

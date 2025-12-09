@@ -20,9 +20,13 @@ func (db *DB) GetAllServices() ([]Service, error) {
 	var services []Service
 	for rows.Next() {
 		var svc Service
-		err := rows.Scan(&svc.ID, &svc.Name, &svc.Color, &svc.LogoURL, &svc.Enabled, &svc.Created)
+		var logoURL sql.NullString
+		err := rows.Scan(&svc.ID, &svc.Name, &svc.Color, &logoURL, &svc.Enabled, &svc.Created)
 		if err != nil {
 			return nil, err
+		}
+		if logoURL.Valid {
+			svc.LogoURL = logoURL.String
 		}
 		services = append(services, svc)
 	}
@@ -33,17 +37,22 @@ func (db *DB) GetAllServices() ([]Service, error) {
 // GetServiceByID returns a service by ID
 func (db *DB) GetServiceByID(id int64) (*Service, error) {
 	var svc Service
+	var logoURL sql.NullString
 	err := db.QueryRow(`
 		SELECT id, name, color, logo_url, enabled, created
 		FROM services
 		WHERE id = ?
-	`, id).Scan(&svc.ID, &svc.Name, &svc.Color, &svc.LogoURL, &svc.Enabled, &svc.Created)
+	`, id).Scan(&svc.ID, &svc.Name, &svc.Color, &logoURL, &svc.Enabled, &svc.Created)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	if logoURL.Valid {
+		svc.LogoURL = logoURL.String
 	}
 
 	return &svc, nil
@@ -52,17 +61,22 @@ func (db *DB) GetServiceByID(id int64) (*Service, error) {
 // GetServiceByName returns a service by name
 func (db *DB) GetServiceByName(name string) (*Service, error) {
 	var svc Service
+	var logoURL sql.NullString
 	err := db.QueryRow(`
 		SELECT id, name, color, logo_url, enabled, created
 		FROM services
 		WHERE name = ?
-	`, name).Scan(&svc.ID, &svc.Name, &svc.Color, &svc.LogoURL, &svc.Enabled, &svc.Created)
+	`, name).Scan(&svc.ID, &svc.Name, &svc.Color, &logoURL, &svc.Enabled, &svc.Created)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	if logoURL.Valid {
+		svc.LogoURL = logoURL.String
 	}
 
 	return &svc, nil
@@ -96,17 +110,22 @@ func (db *DB) GetServiceStats(startDate, endDate time.Time) ([]ServiceStats, err
 	for rows.Next() {
 		var stat ServiceStats
 		var lastWatchedStr sql.NullString
+		var logoURL sql.NullString
 		err := rows.Scan(
 			&stat.ServiceID,
 			&stat.ServiceName,
 			&stat.Color,
-			&stat.LogoURL,
+			&logoURL,
 			&stat.TotalMinutes,
 			&stat.TotalShows,
 			&lastWatchedStr,
 		)
 		if err != nil {
 			return nil, err
+		}
+
+		if logoURL.Valid {
+			stat.LogoURL = logoURL.String
 		}
 		if lastWatchedStr.Valid && lastWatchedStr.String != "" {
 			// Parse the datetime string from SQLite

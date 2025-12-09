@@ -47,11 +47,18 @@ var services = map[string]ServiceInfo{
 		CookieDomain: ".amazon.com",
 		RequiredCookies: []string{"session-id", "ubid-main"},
 	},
+	"hulu": {
+		Name:        "Hulu",
+		LoginURL:    "https://auth.hulu.com/web/login/enter-email",
+		TestURL:     "https://www.hulu.com/hub/home/collection/282",
+		CookieDomain: ".hulu.com",
+		RequiredCookies: []string{"hulu_session"},
+	},
 }
 
 func main() {
 	// Parse command-line flags
-	serviceFlag := flag.String("service", "", "Service to export cookies for (netflix, youtube_tv, amazon_video)")
+	serviceFlag := flag.String("service", "", "Service to export cookies for (netflix, youtube_tv, amazon_video, hulu)")
 	configPath := flag.String("config", "./config.yaml", "Path to config.yaml file")
 	validateOnly := flag.Bool("validate", false, "Only validate existing cookies without exporting new ones")
 	flag.Parse()
@@ -62,6 +69,7 @@ func main() {
 		fmt.Println("  ./export-cookies --service netflix")
 		fmt.Println("  ./export-cookies --service youtube_tv")
 		fmt.Println("  ./export-cookies --service amazon_video")
+		fmt.Println("  ./export-cookies --service hulu")
 		fmt.Println("  ./export-cookies --service netflix --validate")
 		os.Exit(1)
 	}
@@ -70,7 +78,7 @@ func main() {
 	serviceInfo, ok := services[serviceKey]
 	if !ok {
 		fmt.Printf("❌ Error: Unknown service '%s'\n", serviceKey)
-		fmt.Println("\nSupported services: netflix, youtube_tv, amazon_video")
+		fmt.Println("\nSupported services: netflix, youtube_tv, amazon_video, hulu")
 		os.Exit(1)
 	}
 
@@ -147,7 +155,12 @@ func exportCookies(serviceInfo ServiceInfo) ([]*network.Cookie, error) {
 
 	// Wait for user to log in
 	fmt.Println("⏳ Waiting for you to log in...")
-	fmt.Println("   After logging in successfully, press Enter here to continue...")
+	if serviceInfo.TestURL != serviceInfo.LoginURL {
+		fmt.Printf("   After logging in, navigate to: %s\n", serviceInfo.TestURL)
+		fmt.Println("   Wait for the page to fully load, then press Enter here to continue...")
+	} else {
+		fmt.Println("   After logging in successfully, press Enter here to continue...")
+	}
 	fmt.Scanln()
 
 	fmt.Println("\n🔄 Extracting cookies...")
