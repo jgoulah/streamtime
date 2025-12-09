@@ -169,7 +169,16 @@ func (s *NetflixScraper) extractViewingHistory(ctx context.Context) ([]database.
 
 	log.Printf("Found %d viewing activity items", len(nodes))
 
+	// Get existing items from database to prevent duplicates
+	existingItems, err := s.getExistingItems()
+	if err != nil {
+		log.Printf("Warning: failed to get existing items: %v", err)
+		existingItems = make(map[string]bool)
+	}
+	log.Printf("Loaded %d existing items from database for duplicate checking", len(existingItems))
+
 	var items []database.WatchHistory
+	skippedCount := 0
 
 	// Extract data from each row
 	for _, node := range nodes {
@@ -178,10 +187,20 @@ func (s *NetflixScraper) extractViewingHistory(ctx context.Context) ([]database.
 			log.Printf("Error parsing row: %v", err)
 			continue
 		}
+
+		// Check if this item already exists in the database
+		// Use same key format as unique constraint: service_id, title, watched_at
+		// Use UTC to ensure consistent date formatting
+		key := fmt.Sprintf("%s|%s", item.Title, item.WatchedAt.UTC().Format("2006-01-02"))
+		if existingItems[key] {
+			skippedCount++
+			continue
+		}
+
 		items = append(items, item)
 	}
 
-	log.Printf("Successfully extracted %d items", len(items))
+	log.Printf("Netflix scraper extracted %d new items (skipped %d existing)", len(items), skippedCount)
 	return items, nil
 }
 
@@ -413,4 +432,32 @@ func parseEpisodeInfo(episodeStr string) (season int, episode int, err error) {
 	}
 
 	return 0, 0, fmt.Errorf("unable to parse episode info: %s", episodeStr)
+}
+
+// getExistingItems returns a set of existing titles in the database for Netflix
+func (s *NetflixScraper) getExistingItems() (map[string]bool, error) {
+	// Get the service ID for Netflix
+	service, err := s.db.GetServiceByName(s.serviceKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get service: %w", err)
+	}
+
+	// Get all watch history for this service (last 2 years)
+	startDate := time.Now().AddDate(-2, 0, 0)
+	endDate := time.Now().AddDate(0, 0, 1)
+	history, err := s.db.GetWatchHistory(service.ID, startDate, endDate, 10000, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get watch history: %w", err)
+	}
+
+	// Build a set of existing titles with dates for uniqueness
+	// Format: "title|date" (matching the UNIQUE constraint in the database)
+	// Use UTC to ensure consistent date formatting
+	existing := make(map[string]bool)
+	for _, item := range history {
+		key := fmt.Sprintf("%s|%s", item.Title, item.WatchedAt.UTC().Format("2006-01-02"))
+		existing[key] = true
+	}
+
+	return existing, nil
 }

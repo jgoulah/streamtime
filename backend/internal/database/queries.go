@@ -180,7 +180,8 @@ func (db *DB) GetWatchHistory(serviceID int64, startDate, endDate time.Time, lim
 func (db *DB) WatchHistoryExists(serviceID int64, title, episodeInfo string, watchedAt time.Time) (bool, error) {
 	var count int
 	// Normalize the watched_at time to just the date for comparison
-	dateOnly := watchedAt.Format("2006-01-02")
+	// Use UTC to ensure consistent date formatting across timezones
+	dateOnly := watchedAt.UTC().Format("2006-01-02")
 
 	err := db.QueryRow(`
 		SELECT COUNT(*)

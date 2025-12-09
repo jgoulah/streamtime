@@ -36,7 +36,9 @@
       "WebSearch",
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "mcp__serena__read_file"
+      "mcp__serena__read_file",
+      "mcp__serena__insert_after_symbol",
+      "mcp__serena__replace_regex"
     ],
     "deny": [],
     "ask": []
