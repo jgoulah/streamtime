@@ -78,3 +78,8 @@ scraper:
   user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
   test_mode: false  # When true, only scrapes limited items for testing
   test_limit: 100  # Number of items to scrape in test mode
+
+tmdb:
+  # The Movie Database API key for episode metadata
+  # Get your API key from: https://www.themoviedb.org/settings/api
+  api_key: "your-tmdb-api-key"
