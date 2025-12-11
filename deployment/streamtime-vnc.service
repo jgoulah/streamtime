@@ -1,0 +1,12 @@
+[Unit]
+Description=StreamTime VNC Display (Xvfb + x11vnc for Amazon scraper)
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/opt/streamtime/start-vnc-display.sh
+RemainAfterExit=yes
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

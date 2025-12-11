@@ -173,6 +173,113 @@ Or for a specific service:
 0 6 * * * /opt/streamtime/scraper --service youtube_tv --config /usr/local/etc/streamtime/config.yaml --database /usr/local/etc/streamtime/streamtime.db >> /var/log/streamtime.log 2>&1
 ```
 
+## Amazon Video: Persistent Session Setup
+
+Amazon cookies are session-bound and don't work when exported to a different browser context. Instead, use a persistent Chrome profile on the remote server with Xvfb (virtual display) and VNC for manual login.
+
+### One-Time Server Setup
+
+```bash
+# SSH to your remote server
+ssh remote-hostname
+
+# Install required packages
+sudo apt-get update
+sudo apt-get install -y chromium-browser xvfb x11vnc openbox
+
+# Create persistent Chrome profile directory
+mkdir -p ~/.config/chromium-amazon
+```
+
+### Deploy VNC Display Service
+
+The project includes a systemd service that starts Xvfb, openbox, and x11vnc automatically on boot:
+
+```bash
+# Sync files to remote server (includes VNC scripts)
+make install-remote
+
+# Enable and start the VNC display service
+make setup-vnc-remote
+```
+
+This installs:
+- `/opt/streamtime/start-vnc-display.sh` - Idempotent startup script
+- `/etc/systemd/system/streamtime-vnc.service` - Systemd service
+
+**Useful commands:**
+```bash
+# Check service status
+ssh remote-hostname "systemctl status streamtime-vnc"
+
+# Manually start/stop
+ssh remote-hostname "sudo systemctl start streamtime-vnc"
+ssh remote-hostname "sudo systemctl stop streamtime-vnc"
+
+# Run script directly (safe to run multiple times)
+ssh remote-hostname "/opt/streamtime/start-vnc-display.sh"
+
+# Verify processes are running
+ssh remote-hostname "pgrep -a Xvfb; pgrep -a openbox; pgrep -a x11vnc"
+```
+
+### Manual Login via VNC
+
+When you need to log in (first time or when session expires):
+
+1. Connect to your server via VNC client (e.g., RealVNC) at `remote-hostname:5900`
+
+2. In a terminal on the remote server, launch Chromium:
+   ```bash
+   DISPLAY=:99 chromium-browser --no-sandbox --user-data-dir=/home/username/.config/chromium-amazon https://www.amazon.com/gp/video/settings/watch-history &
+   ```
+
+3. The browser window will appear in your VNC viewer
+
+4. Log into Amazon, complete any 2FA/puzzles
+
+5. Verify you see your watch history, then close the browser
+
+The session is now saved in the profile directory.
+
+### Running the Scraper
+
+With the VNC display service running:
+
+```bash
+# Run Amazon scraper with the virtual display
+DISPLAY=:99 /opt/streamtime/scraper --service 'Amazon Video' --config /usr/local/etc/streamtime/config.yaml --database /usr/local/etc/streamtime/streamtime.db
+```
+
+### Cron Setup for Amazon
+
+The VNC display service starts automatically on boot, so cron just needs to run the scraper:
+
+```cron
+# Run Amazon scraper daily at 6am
+0 6 * * * DISPLAY=:99 /opt/streamtime/scraper --service 'Amazon Video' --config /usr/local/etc/streamtime/config.yaml --database /usr/local/etc/streamtime/streamtime.db >> /var/log/streamtime.log 2>&1
+```
+
+### Config.yaml Setup
+
+In your `config.yaml`, set the `user_data_dir` for Amazon:
+
+```yaml
+services:
+  amazon_video:
+    enabled: true
+    user_data_dir: "/home/username/.config/chromium-amazon"
+```
+
+When `user_data_dir` is set, the scraper uses the persistent profile instead of cookies.
+
+### Session Lifespan
+
+Persistent browser sessions typically last weeks to months. Re-login via VNC when:
+- The scraper reports being redirected to the login page
+- After major Amazon security updates
+- If you clear the profile directory
+
 ## Cookie Maintenance
 
 Cookies typically expire after 30-90 days. To maintain your scrapers:

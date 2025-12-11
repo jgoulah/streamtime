@@ -40,22 +40,19 @@ services:
 
   amazon_video:
     enabled: true
-    # To get your cookies:
-    # 1. Login to Prime Video in Chrome/Firefox
-    # 2. Open DevTools (F12) -> Application/Storage -> Cookies -> https://www.amazon.com
-    # 3. Copy the values for important cookies (session-id, ubid-main, at-main, etc.)
-    cookies:
-      - name: "session-id"
-        value: "your-session-id-value"
-      - name: "session-id-time"
-        value: "your-session-id-time-value"
-      - name: "ubid-main"
-        value: "your-ubid-main-value"
-      - name: "at-main"
-        value: "your-at-main-value"
-      - name: "sess-at-main"
-        value: "your-sess-at-main-value"
-      # Add more cookies as needed
+    # RECOMMENDED: Use a persistent Chrome user data directory
+    # This maintains login sessions across scraper runs without cookie export
+    # 1. Run: chromium-browser --no-sandbox --user-data-dir=~/.config/chromium-amazon https://www.amazon.com
+    # 2. Login to Amazon manually
+    # 3. Close the browser
+    # 4. Set the path below
+    user_data_dir: "/home/username/.config/chromium-amazon"
+    # ALTERNATIVE: Use cookies (less reliable due to session binding)
+    # cookies:
+    #   - name: "session-id"
+    #     value: "your-session-id-value"
+    #   - name: "ubid-main"
+    #     value: "your-ubid-main-value"
 
   hulu:
     enabled: true

@@ -35,11 +35,12 @@ type Cookie struct {
 
 // ServiceConfig holds configuration for a streaming service
 type ServiceConfig struct {
-	Enabled bool     `yaml:"enabled"`
-	Cookies []Cookie `yaml:"cookies"`
-	Email   string   `yaml:"email"` // For non-Netflix services
-	Password string  `yaml:"password"` // For non-Netflix services
-	UseOAuth bool    `yaml:"use_oauth"` // For non-Netflix services
+	Enabled     bool     `yaml:"enabled"`
+	Cookies     []Cookie `yaml:"cookies"`
+	Email       string   `yaml:"email"`        // For non-Netflix services
+	Password    string   `yaml:"password"`     // For non-Netflix services
+	UseOAuth    bool     `yaml:"use_oauth"`    // For non-Netflix services
+	UserDataDir string   `yaml:"user_data_dir"` // Chrome user data directory for persistent sessions
 }
 
 // ScraperConfig holds scraper configuration

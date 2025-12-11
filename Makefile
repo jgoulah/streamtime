@@ -1,4 +1,4 @@
-.PHONY: build build-export-cookies install-remote run clean help refresh-cookies setup-systemd-remote
+.PHONY: build build-export-cookies install-remote run clean help refresh-cookies setup-systemd-remote setup-vnc-remote
 
 # Variables
 BACKEND_DIR = backend
@@ -69,10 +69,12 @@ install-remote: build-remote build-frontend
 	@scp -r $(FRONTEND_DIST) $(REMOTE_HOST):$(REMOTE_BIN_DIR)/frontend/
 	@scp config.yaml $(REMOTE_HOST):$(REMOTE_ETC_DIR)/config.yaml
 	@scp deployment/streamtime.service $(REMOTE_HOST):$(REMOTE_BIN_DIR)/streamtime.service
+	@scp deployment/streamtime-vnc.service $(REMOTE_HOST):$(REMOTE_BIN_DIR)/streamtime-vnc.service
+	@scp deployment/start-vnc-display.sh $(REMOTE_HOST):$(REMOTE_BIN_DIR)/start-vnc-display.sh
 	@ssh $(REMOTE_HOST) "mv $(REMOTE_BIN_DIR)/server.new $(REMOTE_BIN_DIR)/server && \
 		mv $(REMOTE_BIN_DIR)/scraper.new $(REMOTE_BIN_DIR)/scraper && \
 		mv $(REMOTE_BIN_DIR)/export-cookies.new $(REMOTE_BIN_DIR)/export-cookies && \
-		chmod +x $(REMOTE_BIN_DIR)/server $(REMOTE_BIN_DIR)/scraper $(REMOTE_BIN_DIR)/export-cookies"
+		chmod +x $(REMOTE_BIN_DIR)/server $(REMOTE_BIN_DIR)/scraper $(REMOTE_BIN_DIR)/export-cookies $(REMOTE_BIN_DIR)/start-vnc-display.sh"
 	@echo ""
 	@echo "Restarting service if it exists..."
 	@ssh $(REMOTE_HOST) "sudo systemctl restart streamtime 2>/dev/null && echo 'Service restarted' || echo 'Service not yet set up - run: make setup-systemd-remote'"
@@ -134,6 +136,24 @@ setup-systemd-remote:
 	@echo "  Stop:      ssh $(REMOTE_HOST) 'sudo systemctl stop streamtime'"
 	@echo ""
 	@echo "Access web UI at: http://$(REMOTE_HOST):8080"
+
+## setup-vnc-remote: Set up VNC display service for Amazon scraper on remote host
+setup-vnc-remote:
+	@echo "Setting up VNC display service on $(REMOTE_HOST)..."
+	@ssh -t $(REMOTE_HOST) "sudo cp $(REMOTE_BIN_DIR)/streamtime-vnc.service /etc/systemd/system/ && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl enable streamtime-vnc && \
+		sudo systemctl start streamtime-vnc && \
+		sudo systemctl status streamtime-vnc --no-pager"
+	@echo ""
+	@echo "VNC display service started!"
+	@echo ""
+	@echo "Useful commands:"
+	@echo "  Start VNC:    ssh $(REMOTE_HOST) 'sudo systemctl start streamtime-vnc'"
+	@echo "  Stop VNC:     ssh $(REMOTE_HOST) 'sudo systemctl stop streamtime-vnc'"
+	@echo "  Manual start: ssh $(REMOTE_HOST) '$(REMOTE_BIN_DIR)/start-vnc-display.sh'"
+	@echo ""
+	@echo "Connect via VNC to $(REMOTE_HOST):5900 for Amazon login"
 
 ## clean: Remove built binaries
 clean:

@@ -53,7 +53,14 @@ func (s *AmazonScraper) Scrape(ctx context.Context) ([]database.WatchHistory, er
 		chromedp.Flag("headless", s.config.Scraper.Headless),
 		chromedp.UserAgent(s.config.Scraper.UserAgent),
 		chromedp.Flag("disable-blink-features", "AutomationControlled"),
+		chromedp.Flag("no-sandbox", true), // Required for running on Linux servers
 	)
+
+	// Use persistent user data directory if configured (preferred over cookies)
+	if serviceCfg.UserDataDir != "" {
+		log.Printf("Using persistent user data directory: %s", serviceCfg.UserDataDir)
+		opts = append(opts, chromedp.UserDataDir(serviceCfg.UserDataDir))
+	}
 
 	allocCtx, allocCancel := chromedp.NewExecAllocator(ctx, opts...)
 	defer allocCancel()
@@ -61,9 +68,12 @@ func (s *AmazonScraper) Scrape(ctx context.Context) ([]database.WatchHistory, er
 	chromeCtx, chromeCancel := chromedp.NewContext(allocCtx, chromedp.WithLogf(log.Printf))
 	defer chromeCancel()
 
-	// Load authentication cookies
-	if err := s.loadCookies(chromeCtx, serviceCfg.Cookies); err != nil {
-		return nil, fmt.Errorf("failed to load cookies: %w", err)
+	// Only load cookies if user data directory is not configured
+	if serviceCfg.UserDataDir == "" && len(serviceCfg.Cookies) > 0 {
+		log.Println("No user data directory configured, loading cookies...")
+		if err := s.loadCookies(chromeCtx, serviceCfg.Cookies); err != nil {
+			return nil, fmt.Errorf("failed to load cookies: %w", err)
+		}
 	}
 
 	// Navigate to watch history
@@ -126,6 +136,15 @@ func (s *AmazonScraper) navigateToWatchHistory(ctx context.Context) error {
 	// Wait longer for the AJAX/React content to load
 	log.Println("Waiting for watch history content to load...")
 	time.Sleep(15 * time.Second)
+
+	// Debug: Check current URL to see if we got redirected
+	var currentURL string
+	if err := chromedp.Run(ctx, chromedp.Location(&currentURL)); err == nil {
+		log.Printf("Current URL after navigation: %s", currentURL)
+		if strings.Contains(currentURL, "/ap/signin") || strings.Contains(currentURL, "/ap/cvf") {
+			log.Printf("WARNING: Redirected to login page - cookies may not be working")
+		}
+	}
 
 	return nil
 }

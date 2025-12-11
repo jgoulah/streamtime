@@ -38,7 +38,16 @@
       "mcp__context7__get-library-docs",
       "mcp__serena__read_file",
       "mcp__serena__insert_after_symbol",
-      "mcp__serena__replace_regex"
+      "mcp__serena__replace_regex",
+      "Bash(brew info:*)",
+      "Bash(op item get:*)",
+      "Bash(make build-export-cookies:*)",
+      "mcp__chrome-devtools__fill",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__click",
+      "mcp__serena__replace_symbol_body"
     ],
     "deny": [],
     "ask": []
